@@ -48,6 +48,15 @@ body {
     font-size: 0.875rem;
 }
 
+.site-header {
+    width: 100%;
+    padding: 16px;
+    text-align: center;
+    font-size: 24px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
 /* Form Styles */
 .form-group {
     margin-bottom: 20px;

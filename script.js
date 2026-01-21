@@ -242,3 +242,24 @@ class BasicLoginForm {
 document.addEventListener('DOMContentLoaded', () => {
     new BasicLoginForm();
 });
+
+document.addEventListener("DOMContentLoaded", () => {
+    const form = document.getElementById("loginForm");
+
+    form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        // TEMP: real Supabase auth later
+        setTimeout(() => {
+            window.location.href = "home.html";
+        }, 1000);
+    });
+});
+
+document.getElementById("signupForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+
+    // TEMP: Supabase signup later
+    alert("Account created (placeholder)");
+    window.location.href = "index.html";
+});
