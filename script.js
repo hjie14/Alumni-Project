@@ -1,164 +1,130 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js";
+import { supabase } from "./supabase.js";
 
-const supabase = createClient(
-    "YOUR_SUPABASE_URL",
-    "YOUR_PUBLIC_ANON_KEY"
-);
+/* =======================
+   COMMON FUNCTIONS
+======================== */
+function validateEmail(email) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
 
-/* =========================
-   SIGN UP
-========================= */
-if (document.getElementById("signupForm")) {
-    document.getElementById("signupForm").addEventListener("submit", async (e) => {
-        e.preventDefault();
+/* =======================
+   MAIN LOGIC
+======================== */
+document.addEventListener("DOMContentLoaded", async () => {
 
-        const username = document.getElementById("signupUsername").value;
-        const email = document.getElementById("signupEmail").value;
-        const password = document.getElementById("signupPassword").value;
-        const userType = document.getElementById("signupRole").value;
+    /* =======================
+       LOGIN PAGE
+    ======================== */
+    const loginForm = document.getElementById("loginForm");
 
-        const { data, error } = await supabase.auth.signUp({
-            email,
-            password
-        });
+    if (loginForm) {
+        const emailInput = document.getElementById("email");
+        const passwordInput = document.getElementById("password");
+        const passwordToggle = document.getElementById("passwordToggle");
+        const loginBtn = document.querySelector(".login-btn");
 
-        if (error) {
-            alert(error.message);
-            return;
+        if (passwordToggle) {
+            passwordToggle.addEventListener("click", () => {
+                passwordInput.type =
+                    passwordInput.type === "password" ? "text" : "password";
+            });
         }
 
-        const authId = data.user.id;
+        loginForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
 
-        const { error: insertError } = await supabase
-            .from("User")
-            .insert({
-                user_name: username,
-                email: email,
-                user_type: userType,
-                auth_id: authId
+            const email = emailInput.value.trim();
+            const password = passwordInput.value.trim();
+
+            if (!email || !password) {
+                alert("Email and password are required");
+                return;
+            }
+
+            if (!validateEmail(email)) {
+                alert("Invalid email format");
+                return;
+            }
+
+            loginBtn.classList.add("loading");
+
+            const { error } = await supabase.auth.signInWithPassword({
+                email,
+                password
             });
 
-        if (insertError) {
-            alert(insertError.message);
-            return;
-        }
+            loginBtn.classList.remove("loading");
 
-        alert("Account created successfully!");
-        window.location.href = "index.html";
-    });
-}
-
-/* =========================
-   LOGIN
-========================= */
-if (document.getElementById("loginForm")) {
-    document.getElementById("loginForm").addEventListener("submit", async (e) => {
-        e.preventDefault();
-
-        const email = document.getElementById("loginEmail").value;
-        const password = document.getElementById("loginPassword").value;
-
-        const { data, error } = await supabase.auth.signInWithPassword({
-            email,
-            password
-        });
-
-        if (error) {
-            alert(error.message);
-            return;
-        }
-
-        window.location.href = "home.html";
-    });
-}
-
-/* =========================
-   HOME PAGE
-========================= */
-if (window.location.pathname.includes("home.html")) {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-        window.location.href = "index.html";
-        return;
-    }
-
-    // Get BIGINT user_id
-    const { data: userRow } = await supabase
-        .from("User")
-        .select("user_id")
-        .eq("auth_id", session.user.id)
-        .single();
-
-    const userId = userRow.user_id;
-
-    const logoutBtn = document.getElementById("logoutBtn");
-    const postForm = document.getElementById("postForm");
-    const postsContainer = document.getElementById("postsContainer");
-
-    logoutBtn.onclick = async () => {
-        await supabase.auth.signOut();
-        window.location.href = "index.html";
-    };
-
-    postForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
-
-        const title = document.getElementById("postTitle").value;
-        const description = document.getElementById("postDescription").value;
-        const imageFile = document.getElementById("postImage").files[0];
-
-        let imageUrl = null;
-
-        if (imageFile) {
-            const path = `${session.user.id}/${Date.now()}-${imageFile.name}`;
-
-            await supabase.storage
-                .from("post-images")
-                .upload(path, imageFile);
-
-            imageUrl = supabase.storage
-                .from("post-images")
-                .getPublicUrl(path).data.publicUrl;
-        }
-
-        const { error } = await supabase.from("Post").insert({
-            user_id: userId,
-            text_content: {
-                title,
-                description,
-                image_url: imageUrl
+            if (error) {
+                alert("Invalid email or password");
+                return;
             }
-        });
 
-        if (error) {
-            alert(error.message);
-            return;
-        }
-
-        postForm.reset();
-        loadPosts();
-    });
-
-    async function loadPosts() {
-        postsContainer.innerHTML = "";
-
-        const { data } = await supabase
-            .from("Post")
-            .select("*")
-            .order("created_at", { ascending: false });
-
-        data.forEach(post => {
-            const c = post.text_content || {};
-            const div = document.createElement("div");
-            div.className = "post";
-            div.innerHTML = `
-                <h3>${c.title || ""}</h3>
-                <p>${c.description || ""}</p>
-                ${c.image_url ? `<img src="${c.image_url}">` : ""}
-            `;
-            postsContainer.appendChild(div);
+            window.location.href = "home.html";
         });
     }
 
-    loadPosts();
-}
+    /* =======================
+       SIGNUP PAGE
+    ======================== */
+    const signupForm = document.getElementById("signupForm");
+
+    if (signupForm) {
+        const signupEmail = document.getElementById("signupEmail");
+        const signupPassword = document.getElementById("signupPassword");
+
+        signupForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            const email = signupEmail.value.trim();
+            const password = signupPassword.value.trim();
+
+            if (!email || !password) {
+                alert("Email and password are required");
+                return;
+            }
+
+            if (!validateEmail(email)) {
+                alert("Invalid email format");
+                return;
+            }
+
+            if (password.length < 6) {
+                alert("Password must be at least 6 characters");
+                return;
+            }
+
+            const { error } = await supabase.auth.signUp({
+                email,
+                password
+            });
+
+            if (error) {
+                alert(error.message);
+                return;
+            }
+
+            alert("Account created successfully! Please sign in.");
+            window.location.href = "index.html";
+        });
+    }
+
+    /* =======================
+       HOME PAGE PROTECTION
+    ======================== */
+    if (window.location.pathname.includes("home.html")) {
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (!session) {
+            window.location.href = "index.html";
+        }
+
+        const logoutBtn = document.getElementById("logoutBtn");
+        if (logoutBtn) {
+            logoutBtn.addEventListener("click", async () => {
+                await supabase.auth.signOut();
+                window.location.href = "index.html";
+            });
+        }
+    }
+});
