@@ -112,19 +112,82 @@ document.addEventListener("DOMContentLoaded", async () => {
     /* =======================
        HOME PAGE PROTECTION
     ======================== */
-    if (window.location.pathname.includes("home.html")) {
-        const { data: { session } } = await supabase.auth.getSession();
+if (window.location.pathname.includes("home.html")) {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) window.location.href = "index.html";
 
-        if (!session) {
-            window.location.href = "index.html";
+    const logoutBtn = document.getElementById("logoutBtn");
+    const createPostBtn = document.getElementById("createPostBtn");
+    const modal = document.getElementById("postModal");
+    const postForm = document.getElementById("postForm");
+    const postsContainer = document.getElementById("postsContainer");
+
+    logoutBtn.onclick = async () => {
+        await supabase.auth.signOut();
+        window.location.href = "index.html";
+    };
+
+    createPostBtn.onclick = () => modal.classList.remove("hidden");
+    modal.onclick = e => {
+        if (e.target === modal) modal.classList.add("hidden");
+    };
+
+    postForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const title = document.getElementById("postTitle").value;
+        const description = document.getElementById("postDescription").value;
+        const imageFile = document.getElementById("postImage").files[0];
+
+        let imageUrl = null;
+
+        if (imageFile) {
+            const filePath = `${session.user.id}/${Date.now()}-${imageFile.name}`;
+            const { error } = await supabase.storage
+                .from("post-images")
+                .upload(filePath, imageFile);
+
+            if (error) return alert(error.message);
+
+            imageUrl = supabase.storage
+                .from("post-images")
+                .getPublicUrl(filePath).data.publicUrl;
         }
 
-        const logoutBtn = document.getElementById("logoutBtn");
-        if (logoutBtn) {
-            logoutBtn.addEventListener("click", async () => {
-                await supabase.auth.signOut();
-                window.location.href = "index.html";
-            });
-        }
+        const { error } = await supabase.from("posts").insert({
+            user_id: session.user.id,
+            title,
+            description,
+            image_url: imageUrl
+        });
+
+        if (error) return alert(error.message);
+
+        modal.classList.add("hidden");
+        postForm.reset();
+        loadPosts();
+    });
+
+    async function loadPosts() {
+        postsContainer.innerHTML = "";
+
+        const { data } = await supabase
+            .from("posts")
+            .select("*")
+            .order("created_at", { ascending: false });
+
+        data.forEach(post => {
+            const div = document.createElement("div");
+            div.className = "post-card";
+            div.innerHTML = `
+                <h3>${post.title}</h3>
+                <p>${post.description || ""}</p>
+                ${post.image_url ? `<img src="${post.image_url}">` : ""}
+            `;
+            postsContainer.appendChild(div);
+        });
     }
+
+    loadPosts();
+}
 });
