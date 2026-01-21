@@ -14,32 +14,12 @@
 <main style="padding: 40px; text-align: center;">
     <h2>Welcome!</h2>
     <p>This is your home page.</p>
+
+    <button id="logoutBtn" class="login-btn" style="max-width:200px;">
+        Logout
+    </button>
 </main>
 
-<!--Authenticate user session -->
-<script type="module">
-import { supabase } from "./supabase.js";
-
-const { data: { session } } = await supabase.auth.getSession();
-
-if (!session) {
-    window.location.href = "index.html";
-}
-</script>
-
-<!-- Log out -->
-<button id="logoutBtn">Logout</button>
-
-<script type="module">
-import { supabase } from "./supabase.js";
-
-document.getElementById("logoutBtn").addEventListener("click", async () => {
-    await supabase.auth.signOut();
-    window.location.href = "index.html";
-});
-</script>
-
 <script type="module" src="script.js"></script>
-
 </body>
 </html>

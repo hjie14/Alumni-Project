@@ -1,23 +1,15 @@
-// =======================
-// SUPABASE SETUP
-// =======================
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+import { supabase } from "./supabase.js";
 
-const SUPABASE_URL = "https://kcybawwvsfucdpdcdvpk.supabase.co";
-const SUPABASE_ANON_KEY = "YOUR_ANON_KEY_HERE";
-
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-// =======================
-// COMMON FUNCTIONS
-// =======================
+/* =======================
+   COMMON FUNCTIONS
+======================== */
 function validateEmail(email) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
-// =======================
-// MAIN LOGIC
-// =======================
+/* =======================
+   MAIN LOGIC
+======================== */
 document.addEventListener("DOMContentLoaded", async () => {
 
     /* =======================
@@ -31,7 +23,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         const passwordToggle = document.getElementById("passwordToggle");
         const loginBtn = document.querySelector(".login-btn");
 
-        // Show / hide password
         if (passwordToggle) {
             passwordToggle.addEventListener("click", () => {
                 passwordInput.type =
@@ -45,9 +36,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             const email = emailInput.value.trim();
             const password = passwordInput.value.trim();
 
-            // Frontend validation
-            if (!email) {
-                alert("Email is required");
+            if (!email || !password) {
+                alert("Email and password are required");
                 return;
             }
 
@@ -56,19 +46,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                 return;
             }
 
-            if (!password) {
-                alert("Password is required");
-                return;
-            }
-
-            if (password.length < 6) {
-                alert("Password must be at least 6 characters");
-                return;
-            }
-
             loginBtn.classList.add("loading");
 
-            // ✅ SUPABASE LOGIN
             const { error } = await supabase.auth.signInWithPassword({
                 email,
                 password
@@ -81,7 +60,6 @@ document.addEventListener("DOMContentLoaded", async () => {
                 return;
             }
 
-            // ✅ SUCCESS
             window.location.href = "home.html";
         });
     }
@@ -101,8 +79,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             const email = signupEmail.value.trim();
             const password = signupPassword.value.trim();
 
-            if (!email) {
-                alert("Email is required");
+            if (!email || !password) {
+                alert("Email and password are required");
                 return;
             }
 
@@ -111,17 +89,11 @@ document.addEventListener("DOMContentLoaded", async () => {
                 return;
             }
 
-            if (!password) {
-                alert("Password is required");
-                return;
-            }
-
             if (password.length < 6) {
                 alert("Password must be at least 6 characters");
                 return;
             }
 
-            // ✅ SUPABASE SIGNUP
             const { error } = await supabase.auth.signUp({
                 email,
                 password
@@ -145,6 +117,14 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         if (!session) {
             window.location.href = "index.html";
+        }
+
+        const logoutBtn = document.getElementById("logoutBtn");
+        if (logoutBtn) {
+            logoutBtn.addEventListener("click", async () => {
+                await supabase.auth.signOut();
+                window.location.href = "index.html";
+            });
         }
     }
 });
