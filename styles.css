@@ -324,6 +324,32 @@ body {
     opacity: 1;
 }
 
+/* =========================
+   Header layout (Home page)
+========================= */
+.header-flex {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 40px;
+}
+
+/* Logout button styling */
+.logout-btn {
+    background-color: #e74c3c;
+    color: #fff;
+    border: none;
+    padding: 6px 14px;
+    font-size: 0.85rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.logout-btn:hover {
+    background-color: #c0392b;
+}
+
 
 /* Signup Link */
 .signup-link {
