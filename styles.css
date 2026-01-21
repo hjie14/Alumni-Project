@@ -413,6 +413,75 @@ body {
     font-size: 0.875rem;
 }
 
+/* Header buttons */
+.header-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.small-btn {
+    padding: 6px 14px;
+    font-size: 0.85rem;
+    margin-bottom: 0;
+}
+
+/* Home layout */
+.home-content {
+    width: 100%;
+    max-width: 800px;
+}
+
+/* Posts */
+.posts-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.post-card {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+}
+
+.post-card img {
+    max-width: 100%;
+    border-radius: 8px;
+    margin-top: 10px;
+}
+
+/* Modal */
+.modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal.hidden {
+    display: none;
+}
+
+.modal-content {
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 400px;
+}
+
+.modal-content input,
+.modal-content textarea {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 12px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+}
+
 /* Animations */
 @keyframes spin {
     0% { transform: translate(-50%, -50%) rotate(0deg); }

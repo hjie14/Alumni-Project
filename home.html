@@ -10,15 +10,35 @@
 <header class="site-header header-flex">
     <h1>MyWebsite</h1>
 
-    <button id="logoutBtn" class="logout-btn">
-        Logout
-    </button>
+    <div class="header-actions">
+        <button id="createPostBtn" class="login-btn small-btn">
+            Create Post
+        </button>
+
+        <button id="logoutBtn" class="logout-btn">
+            Logout
+        </button>
+    </div>
 </header>
 
-<main style="padding: 40px; text-align: center;">
-    <h2>Welcome!</h2>
-
+<main class="home-content">
+    <div id="postsContainer" class="posts-container"></div>
 </main>
+
+<!-- Create Post Modal -->
+<div id="postModal" class="modal hidden">
+    <div class="modal-content">
+        <h2>Create Post</h2>
+
+        <form id="postForm">
+            <input type="text" id="postTitle" placeholder="Title" required />
+            <textarea id="postDescription" placeholder="Description"></textarea>
+            <input type="file" id="postImage" accept="image/*" />
+
+            <button class="login-btn">Post</button>
+        </form>
+    </div>
+</div>
 
 <script type="module" src="script.js"></script>
 </body>
