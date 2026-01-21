@@ -11,16 +11,51 @@ body {
     background: #f8fafc;
     min-height: 100vh;
     display: flex;
+    flex-direction: column; /* Changed from default row to column */
     align-items: center;
-    justify-content: center;
     padding: 20px;
     line-height: 1.6;
     color: #334155;
 }
 
+/* Site Header - Centered and Above Login */
+.site-header {
+    width: 100%;
+    max-width: 1200px;
+    padding: 20px 16px;
+    text-align: center;
+    margin-bottom: 40px; /* Added space between header and login form */
+}
+
+.site-header h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #1e293b;
+    background: linear-gradient(90deg, #6366f1, #4f46e5);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    margin: 0;
+    padding-bottom: 15px;
+    position: relative;
+}
+
+.site-header h1:after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 150px;
+    height: 4px;
+    background: linear-gradient(90deg, #6366f1, #4f46e5);
+    border-radius: 2px;
+}
+
 .login-container {
     width: 100%;
     max-width: 400px;
+    margin-top: 20px; /* Added margin to separate from header */
 }
 
 .login-card {
@@ -48,15 +83,7 @@ body {
     font-size: 0.875rem;
 }
 
-.site-header {
-    width: 100%;
-    padding: 16px;
-    text-align: center;
-    font-size: 24px;
-    font-weight: 700;
-    color: #1e293b;
-}
-
+/* Rest of your existing CSS remains the same... */
 /* Form Styles */
 .form-group {
     margin-bottom: 20px;
@@ -372,7 +399,27 @@ body {
 }
 
 /* Mobile Responsive */
+@media (max-width: 768px) {
+    .site-header h1 {
+        font-size: 2rem;
+        padding: 0 10px;
+    }
+    
+    .site-header h1:after {
+        width: 100px;
+    }
+}
+
 @media (max-width: 480px) {
+    .site-header {
+        padding: 15px 10px;
+        margin-bottom: 20px;
+    }
+    
+    .site-header h1 {
+        font-size: 1.5rem;
+    }
+    
     .login-card {
         padding: 24px;
         margin: 10px;
@@ -386,12 +433,5 @@ body {
         flex-direction: column;
         align-items: flex-start;
         gap: 16px;
-    }
-
-
-    .login-card {
-        opacity: 0;
-        transform: translateY(20px);
-        transition: opacity 0.5s ease, transform 0.5s ease;
     }
 }
