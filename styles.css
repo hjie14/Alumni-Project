@@ -514,6 +514,10 @@ body {
   background: #4f46e5;
 }
 
+.modal.hidden {
+    display: none;
+}
+
 /* Animations */
 @keyframes spin {
     0% { transform: translate(-50%, -50%) rotate(0deg); }
