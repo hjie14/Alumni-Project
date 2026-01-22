@@ -445,6 +445,45 @@ body {
     border: 1px solid #e2e8f0;
 }
 
+/* =========================
+   Post Author Styling
+========================= */
+
+.post-header {
+    margin-bottom: 12px;
+}
+
+.post-author-name {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #1e293b;
+    line-height: 1.2;
+}
+
+.post-author-username {
+    font-size: 0.80rem;
+    color: #64748b;
+    margin-top: 2px;
+}
+
+/* =========================
+   Post Content Styling
+========================= */
+
+.post-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin-top: 10px;
+}
+
+.post-content {
+    font-size: 0.85rem;
+    color: #334155;
+    margin-top: 6px;
+    line-height: 1.6;
+}
+
 .post-card img {
     max-width: 100%;
     border-radius: 8px;

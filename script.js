@@ -72,15 +72,19 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (signupForm) {
         const signupEmail = document.getElementById("signupEmail");
         const signupPassword = document.getElementById("signupPassword");
+        const signupName = document.getElementById("signupName");
+        const signupUsername = document.getElementById("signupUsername");
 
         signupForm.addEventListener("submit", async (e) => {
             e.preventDefault();
 
+            const name = signupName.value.trim();
+            const username = signupUsername.value.trim();
             const email = signupEmail.value.trim();
             const password = signupPassword.value.trim();
 
-            if (!email || !password) {
-                alert("Email and password are required");
+            if (!name || !username || !email || !password) {
+                alert("All fields are required");
                 return;
             }
 
@@ -96,7 +100,13 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             const { error } = await supabase.auth.signUp({
                 email,
-                password
+                password,
+                options: {
+                    data: {
+                        name: name,
+                        username: username
+                    }
+                }
             });
 
             if (error) {
@@ -126,11 +136,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         const postForm = document.getElementById("postForm");
         const postsContainer = document.getElementById("postsContainer");
 
-        if (!postForm) {
-            console.error("postForm not found");
-            return;
-        }
-
         logoutBtn.onclick = async () => {
             await supabase.auth.signOut();
             window.location.href = "index.html";
@@ -142,82 +147,94 @@ document.addEventListener("DOMContentLoaded", async () => {
             if (e.target === modal) modal.classList.add("hidden");
         };
 
-        /* =======================
-           CREATE POST
-        ======================== */
-postForm.addEventListener("submit", async (e) => {
-    e.preventDefault();
+        postForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
 
-    const titleInput = document.getElementById("postTitle");
-    const contentInput = document.getElementById("content");
+            const title = document.getElementById("postTitle").value.trim();
+            const content = document.getElementById("content").value.trim();
 
-    const title = titleInput.value.trim();
-    const content = contentInput.value.trim();
-
-    if (!title || !content) {
-        alert("Title and content are required");
-        return;
-    }
-
-    // 🔑 Map auth user → internal User table
-    const { data: userRow, error: userError } = await supabase
-        .from("User")
-        .select("user_id")
-        .eq("email", session.user.email)
-        .single();
-
-    if (userError || !userRow) {
-        alert("User record not found in database");
-        return;
-    }
-
-    // ✅ Insert post using BIGINT user_id
-    const { error: postError } = await supabase
-        .from("post")
-        .insert({
-            user_id: userRow.user_id,
-            text_content: {
-                title: title,
-                body: content
-            }
-        });
-
-    if (postError) {
-        alert(postError.message);
-        return;
-    }
-
-    postForm.reset();
-    modal.classList.add("hidden");
-    loadPosts();
-});
-
-        /* =======================
-           LOAD POSTS
-        ======================== */
-        async function loadPosts() {
-            postsContainer.innerHTML = "";
-
-            const { data, error } = await supabase
-                .from("post")
-                .select("*")
-                .order("created_at", { ascending: false });
-
-            if (error) {
-                console.error(error);
+            if (!title || !content) {
+                alert("Title and content are required");
                 return;
             }
 
-            data.forEach(post => {
-                const div = document.createElement("div");
-                div.className = "post-card";
-                div.innerHTML = `
-                    <h3>${post.text_content?.title || ""}</h3>
-                    <p>${post.text_content?.body || ""}</p>
-                `;
-                postsContainer.appendChild(div);
-            });
-        }
+            const { data: userRow } = await supabase
+                .from("User")
+                .select("user_id")
+                .eq("email", session.user.email)
+                .single();
+
+            if (!userRow) {
+                alert("User record not found in database");
+                return;
+            }
+
+            const { error } = await supabase
+                .from("post")
+                .insert({
+                    user_id: userRow.user_id,
+                    text_content: {
+                        title,
+                        body: content
+                    }
+                });
+
+            if (error) {
+                alert(error.message);
+                return;
+            }
+
+            postForm.reset();
+            modal.classList.add("hidden");
+            loadPosts();
+        });
+
+async function loadPosts() {
+    postsContainer.innerHTML = "";
+
+    const { data, error } = await supabase
+        .from("post")
+        .select(`
+            id,
+            text_content,
+            created_at,
+            "User" (
+                user_name
+            )
+        `)
+        .order("created_at", { ascending: false });
+
+    if (error) {
+        alert(error.message);
+        return;
+    }
+
+    data.forEach(post => {
+        const div = document.createElement("div");
+        div.className = "post-card";
+
+        div.innerHTML = `
+            <div class="post-header">
+                <div class="post-author-name">
+                    ${post.User?.user_name || "Unknown User"}
+                </div>
+                <div class="post-author-username">
+                    @${post.User?.user_name || ""}
+                </div>
+            </div>
+
+            <div class="post-title">
+                ${post.text_content?.title || ""}
+            </div>
+
+            <div class="post-content">
+                ${post.text_content?.body || ""}
+            </div>
+        `;
+
+        postsContainer.appendChild(div);
+    });
+}
 
         loadPosts();
     }
