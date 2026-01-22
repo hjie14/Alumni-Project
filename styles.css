@@ -451,35 +451,67 @@ body {
     margin-top: 10px;
 }
 
-/* Modal */
-.modal {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.4);
-    display: flex;
-    justify-content: center;
-    align-items: center;
+/* Post Widget */
+.widget-post {
+  width: 100%;
+  max-width: 600px;
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
 }
 
-.modal.hidden {
-    display: none;
+.widget-post__header {
+  padding: 12px 16px;
+  background: #f1f5f9;
 }
 
-.modal-content {
-    background: white;
-    padding: 30px;
-    border-radius: 12px;
-    width: 100%;
-    max-width: 400px;
+.widget-post__title {
+  font-size: 1.1rem;
+  color: #1e293b;
 }
 
-.modal-content input,
-.modal-content textarea {
-    width: 100%;
-    padding: 10px;
-    margin-bottom: 12px;
-    border-radius: 6px;
-    border: 1px solid #ccc;
+.widget-post___input {
+  width: 100%;
+  margin: 12px;
+  padding: 8px 12px;
+  border-radius: 20px;
+  border: 1px solid #e2e8f0;
+}
+
+.widget-post__textarea {
+  width: 100%;
+  min-height: 100px;
+  padding: 12px;
+  border: none;
+  resize: none;
+}
+
+.widget-post__textarea:focus {
+  outline: none;
+}
+
+.post--actions {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px;
+  background: #f8fafc;
+}
+
+.attachments--btn {
+  background: #e2e8f0;
+  border-radius: 20px;
+}
+
+.post-actions__publish {
+  background: #6366f1;
+  color: white;
+  border-radius: 20px;
+  padding: 6px 16px;
+}
+
+.post-actions__publish:hover {
+  background: #4f46e5;
 }
 
 /* Animations */

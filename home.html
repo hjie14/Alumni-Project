@@ -27,17 +27,51 @@
 
 <!-- Create Post Modal -->
 <div id="postModal" class="modal hidden">
-    <div class="modal-content">
-        <h2>Create Post</h2>
-
-        <form id="postForm">
-            <input type="text" id="postTitle" placeholder="Title" required />
-            <textarea id="postDescription" placeholder="Description"></textarea>
-            <input type="file" id="postImage" accept="image/*" />
-
-            <button class="login-btn">Post</button>
-        </form>
+  <div class="widget-post" aria-labelledby="post-header-title">
+    <div class="widget-post__header">
+      <h2 class="widget-post__title" id="post-header-title">
+        Write a Post
+      </h2>
     </div>
+
+    <form id="postForm" class="widget-post__form">
+      <!-- TITLE -->
+      <input
+        type="text"
+        id="postTitle"
+        class="widget-post___input"
+        placeholder="Post title"
+        required
+      />
+
+      <!-- CONTENT -->
+      <div class="widget-post__content">
+        <textarea
+          id="postDescription"
+          class="widget-post__textarea scroller"
+          placeholder="What's on your mind?"
+        ></textarea>
+      </div>
+
+      <!-- ACTIONS -->
+      <div class="widget-post__actions post--actions">
+        <div class="post-actions__attachments">
+          <button type="button" class="btn attachments--btn">
+            <label for="postImage" class="post-actions__label">
+              Upload image
+            </label>
+          </button>
+          <input type="file" id="postImage" accept="image/*" />
+        </div>
+
+        <div class="post-actions__widget">
+          <button class="btn post-actions__publish" type="submit">
+            Publish
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
 </div>
 
 <script type="module" src="script.js"></script>
