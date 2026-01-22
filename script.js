@@ -100,17 +100,25 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             const { error } = await supabase.auth.signUp({
                 email,
-                password,
-                options: {
-                    data: {
-                        name: name,
-                        username: username
-                    }
-                }
+                password
             });
 
             if (error) {
                 alert(error.message);
+                return;
+            }
+
+            const { error: insertError } = await supabase
+                .from("User")
+                .insert({
+                    email,
+                    user_name: username,
+                    name: name,
+                    user_type: "user"
+                });
+
+            if (insertError) {
+                alert(insertError.message);
                 return;
             }
 
@@ -189,52 +197,53 @@ document.addEventListener("DOMContentLoaded", async () => {
             loadPosts();
         });
 
-async function loadPosts() {
-    postsContainer.innerHTML = "";
+        async function loadPosts() {
+            postsContainer.innerHTML = "";
 
-    const { data, error } = await supabase
-        .from("post")
-        .select(`
-            id,
-            text_content,
-            created_at,
-            "User" (
-                user_name
-            )
-        `)
-        .order("created_at", { ascending: false });
+            const { data, error } = await supabase
+                .from("post")
+                .select(`
+                    id,
+                    text_content,
+                    created_at,
+                    "User" (
+                        name,
+                        user_name
+                    )
+                `)
+                .order("created_at", { ascending: false });
 
-    if (error) {
-        alert(error.message);
-        return;
-    }
+            if (error) {
+                alert(error.message);
+                return;
+            }
 
-    data.forEach(post => {
-        const div = document.createElement("div");
-        div.className = "post-card";
+            data.forEach(post => {
+                const div = document.createElement("div");
+                div.className = "post-card";
 
-        div.innerHTML = `
-            <div class="post-header">
-                <div class="post-author-name">
-                    ${post.User?.user_name || "Unknown User"}
-                </div>
-                <div class="post-author-username">
-                    @${post.User?.user_name || ""}
-                </div>
-            </div>
+                div.innerHTML = `
+                    <div class="post-header">
+                        <div class="post-author-name">
+                            ${post.User?.name || "Unknown User"}
+                        </div>
+                        <div class="post-author-username">
+                            @${post.User?.user_name || ""}
+                        </div>
+                    </div>
 
-            <div class="post-title">
-                ${post.text_content?.title || ""}
-            </div>
+                    <div class="post-title">
+                        ${post.text_content?.title || ""}
+                    </div>
 
-            <div class="post-content">
-                ${post.text_content?.body || ""}
-            </div>
-        `;
+                    <div class="post-content">
+                        ${post.text_content?.body || ""}
+                    </div>
+                `;
 
-        postsContainer.appendChild(div);
-    });
-}
+                postsContainer.appendChild(div);
+            });
+        }
 
         loadPosts();
     }

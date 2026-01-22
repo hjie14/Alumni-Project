@@ -31,7 +31,7 @@ body {
     font-size: 2.5rem;
     font-weight: 700;
     color: #1e293b;
-    background: linear-gradient(90deg, #6366f1, #4f46e5);
+    background: #3c3ea4;
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
@@ -48,7 +48,7 @@ body {
     transform: translateX(-50%);
     width: 150px;
     height: 4px;
-    background: linear-gradient(90deg, #6366f1, #4f46e5);
+    background: #3c3ea4;
     border-radius: 2px;
 }
 
@@ -264,13 +264,13 @@ body {
 }
 
 .forgot-password:hover {
-    color: #4f46e5;
+    color: #3c3ea4;
 }
 
 /* Button */
 .login-btn {
     width: 100%;
-    background: #6366f1;
+    background: #3c3ea4;
     border: none;
     border-radius: 8px;
     padding: 12px 24px;
@@ -284,7 +284,7 @@ body {
 }
 
 .login-btn:hover {
-    background: #4f46e5;
+    background: #3c3ea4;
 }
 
 .login-btn:active {
@@ -334,22 +334,27 @@ body {
     padding: 16px 40px;
 }
 
-/* Logout button styling */
+/* Log out button*/
 .logout-btn {
-    background-color: #e74c3c;
-    color: #fff;
-    border: none;
-    padding: 6px 14px;
-    font-size: 0.85rem;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
+    background: #e13008;          
+    color: white;
+    border: black;
+    width: 120px;
+    border-radius: 8px;          
+    font-weight: 600;
+    transition: all 0.2s ease;
 }
 
 .logout-btn:hover {
-    background-color: #c0392b;
+    background: gray;
+    opacity: 0.9;
+    cursor: pointer;
 }
 
+
+.logout-btn:active {
+    transform: translateY(1px);
+}
 
 /* Signup Link */
 .signup-link {
@@ -369,7 +374,7 @@ body {
 }
 
 .signup-link a:hover {
-    color: #4f46e5;
+    color: #3c3ea4;
 }
 
 /* Success Message */
@@ -436,6 +441,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: 20px;
+    
 }
 
 .post-card {
@@ -544,7 +550,7 @@ label{
     cursor: pointer;
     transition: background 0.3s ease;
 }.submit-btn:hover{
-    background: #4f46e5;
+    background: #3c3ea4;
     color: white;
 }
 
