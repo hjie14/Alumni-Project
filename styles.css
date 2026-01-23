@@ -13,7 +13,6 @@ body {
     display: flex;
     flex-direction: column; /* Changed from default row to column */
     align-items: center;
-    padding: 20px;
     line-height: 1.6;
     color: #334155;
 }
@@ -21,17 +20,22 @@ body {
 /* Site Header - Centered and Above Login */
 .site-header {
     width: 100%;
-    max-width: 1200px;
     padding: 20px 16px;
     text-align: center;
     margin-bottom: 40px; /* Added space between header and login form */
+}
+
+.site-header-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 16px;
 }
 
 .site-header h1 {
     font-size: 2.5rem;
     font-weight: 700;
     color: #1e293b;
-    background: #3c3ea4;
+    background: #307293;
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
@@ -48,7 +52,7 @@ body {
     transform: translateX(-50%);
     width: 150px;
     height: 4px;
-    background: #3c3ea4;
+    background: #307293;
     border-radius: 2px;
 }
 
@@ -264,13 +268,13 @@ body {
 }
 
 .forgot-password:hover {
-    color: #3c3ea4;
+    color: #307293;
 }
 
 /* Button */
 .login-btn {
     width: 100%;
-    background: #3c3ea4;
+    background: #3e92bc;
     border: none;
     border-radius: 8px;
     padding: 12px 24px;
@@ -284,7 +288,7 @@ body {
 }
 
 .login-btn:hover {
-    background: #3c3ea4;
+    background: #307293;
 }
 
 .login-btn:active {
@@ -356,6 +360,27 @@ body {
     transform: translateY(1px);
 }
 
+/* Header action buttons */
+#createPostBtn {
+    color: white;
+    background-color: #307293;
+    border: black;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+/* Hover effect */
+#createPostBtn:hover {
+    background: gray;
+    cursor: pointer;
+}
+
+/* Click feedback */
+#createPostBtn:active {
+    transform: translateY(1px);
+}
+
 /* Signup Link */
 .signup-link {
     text-align: center;
@@ -374,7 +399,7 @@ body {
 }
 
 .signup-link a:hover {
-    color: #3c3ea4;
+    color: #307293;
 }
 
 /* Success Message */
@@ -550,7 +575,7 @@ label{
     cursor: pointer;
     transition: background 0.3s ease;
 }.submit-btn:hover{
-    background: #3c3ea4;
+    background: #307293;
     color: white;
 }
 
@@ -570,6 +595,95 @@ label{
 
 .modal.hidden {
     display: none;
+}
+
+/* Sidebar Menu */
+
+.menu-btn {
+    background: none;
+    border: none;
+    font-size: 1.4rem;
+    cursor: pointer;
+    color: #307293;
+    padding: 6px 10px;
+}
+
+.sidebar {
+    position: fixed;
+    top: 0;
+    right: -320px;
+    width: 300px;
+    height: 100vh;
+    background: white;
+    border-left: 1px solid #e2e8f0;
+    box-shadow: -6px 0 20px rgba(0,0,0,0.08);
+    transition: right 0.3s ease;
+    z-index: 1200;
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar.open {
+    right: 0;
+}
+
+.sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.sidebar-nav {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.sidebar-link {
+    background: none;
+    border: none;
+    text-align: left;
+    padding: 10px 12px;
+    font-size: 0.95rem;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: background 0.2s ease;
+}
+
+.sidebar-link:hover {
+    background: gray;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 1.4rem;
+    cursor: pointer;
+}
+
+/* =========================
+   Profile Page (Scoped)
+========================= */
+.profile-page {
+    background: #f8fafc;
+}
+
+.profile-page .card {
+    border-radius: 12px;
+}
+
+.profile-page .card-header {
+    background: #307293;
+    color: white;
+}
+
+body.profile-page {
+    display: block;         
+    align-items: initial;
+    justify-content: initial;
 }
 
 /* Animations */

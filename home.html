@@ -14,19 +14,41 @@
 
 <body>
 
-<header class="site-header header-flex">
-    <h1>Home</h1>
+<header class="site-header">
+    <div class="site-header-inner header-flex">
+        <h1>Home</h1>
 
-    <div class="header-actions">
-        <button id="createPostBtn" class="login-btn small-btn">
-            Create Post
-        </button>
+        <div class="header-actions">
+            <button id="createPostBtn" class="login-btn small-btn">
+                Create Post
+            </button>
 
-        <button id="logoutBtn" class="logout-btn">
-            Logout
-        </button>
+            <button id="logoutBtn" class="logout-btn">
+                Logout
+            </button>
+
+            <button id="menuBtn" class="menu-btn">
+                ☰
+            </button>
+        </div>
     </div>
 </header>
+
+<!-- RIGHT SIDEBAR -->
+<aside id="sidebar" class="sidebar">
+    <div class="sidebar-header">
+        <h2>Menu</h2>
+        <button id="closeSidebar" class="close-btn">×</button>
+    </div>
+
+    <nav class="sidebar-nav">
+        <button id="navProfile" class="sidebar-link">
+            My Profile
+        </button>
+
+        <!-- future links/pages put here -->
+    </nav>
+</aside>
 
 <!-- MODAL WRAPPER -->
 <div id="postModal" class="modal hidden">

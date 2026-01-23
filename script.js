@@ -8,9 +8,51 @@ function validateEmail(email) {
 }
 
 /* =======================
-   MAIN LOGIC
+   MAIN ENTRY
 ======================== */
 document.addEventListener("DOMContentLoaded", async () => {
+
+/* =======================
+   GLOBAL HEADER BUTTONS
+======================== */
+const logoutBtn = document.getElementById("logoutBtn");
+const menuBtn = document.getElementById("menuBtn");
+const sidebar = document.getElementById("sidebar");
+const closeSidebar = document.getElementById("closeSidebar");
+
+// Logout (ALL pages)
+if (logoutBtn) {
+    logoutBtn.addEventListener("click", async () => {
+        await supabase.auth.signOut();
+        window.location.href = "index.html";
+    });
+}
+
+// Open sidebar
+if (menuBtn && sidebar) {
+    menuBtn.addEventListener("click", () => {
+        sidebar.classList.add("open");
+    });
+}
+
+// Close sidebar
+if (closeSidebar && sidebar) {
+    closeSidebar.addEventListener("click", () => {
+        sidebar.classList.remove("open");
+    });
+}
+
+/* =======================
+   SIDEBAR NAVIGATION
+======================== */
+const navProfile = document.getElementById("navProfile");
+
+if (navProfile) {
+    navProfile.addEventListener("click", () => {
+        sidebar?.classList.remove("open");
+        window.location.href = "profile.html";
+    });
+}
 
     /* =======================
        LOGIN PAGE
@@ -23,12 +65,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         const passwordToggle = document.getElementById("passwordToggle");
         const loginBtn = document.querySelector(".login-btn");
 
-        if (passwordToggle) {
-            passwordToggle.addEventListener("click", () => {
-                passwordInput.type =
-                    passwordInput.type === "password" ? "text" : "password";
-            });
-        }
+        passwordToggle?.addEventListener("click", () => {
+            passwordInput.type =
+                passwordInput.type === "password" ? "text" : "password";
+        });
 
         loginForm.addEventListener("submit", async (e) => {
             e.preventDefault();
@@ -36,15 +76,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             const email = emailInput.value.trim();
             const password = passwordInput.value.trim();
 
-            if (!email || !password) {
-                alert("Email and password are required");
-                return;
-            }
-
-            if (!validateEmail(email)) {
-                alert("Invalid email format");
-                return;
-            }
+            if (!email || !password) return alert("Email and password required");
+            if (!validateEmail(email)) return alert("Invalid email format");
 
             loginBtn.classList.add("loading");
 
@@ -55,14 +88,13 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             loginBtn.classList.remove("loading");
 
-            if (error) {
-                alert("Invalid email or password");
-                return;
-            }
+            if (error) return alert("Invalid email or password");
 
             window.location.href = "home.html";
         });
     }
+
+    
 
     /* =======================
        SIGNUP PAGE
@@ -70,11 +102,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     const signupForm = document.getElementById("signupForm");
 
     if (signupForm) {
-        const signupEmail = document.getElementById("signupEmail");
-        const signupPassword = document.getElementById("signupPassword");
-        const signupName = document.getElementById("signupName");
-        const signupUsername = document.getElementById("signupUsername");
-
         signupForm.addEventListener("submit", async (e) => {
             e.preventDefault();
 
@@ -83,168 +110,208 @@ document.addEventListener("DOMContentLoaded", async () => {
             const email = signupEmail.value.trim();
             const password = signupPassword.value.trim();
 
-            if (!name || !username || !email || !password) {
-                alert("All fields are required");
-                return;
-            }
+            if (!name || !username || !email || !password)
+                return alert("All fields required");
 
-            if (!validateEmail(email)) {
-                alert("Invalid email format");
-                return;
-            }
-
-            if (password.length < 6) {
-                alert("Password must be at least 6 characters");
-                return;
-            }
-
-            const { error } = await supabase.auth.signUp({
+            const { data: authData, error } = await supabase.auth.signUp({
                 email,
                 password
             });
 
-            if (error) {
-                alert(error.message);
-                return;
-            }
+            if (error) return alert(error.message);
 
             const { error: insertError } = await supabase
                 .from("User")
                 .insert({
                     email,
                     user_name: username,
-                    name: name,
-                    user_type: "user"
+                    name,
+                    user_type: "user",
+                    auth_id: authData.user.id
                 });
 
-            if (insertError) {
-                alert(insertError.message);
-                return;
-            }
+            if (insertError) return alert(insertError.message);
 
-            alert("Account created successfully! Please sign in.");
+            alert("Account created. Please sign in.");
             window.location.href = "index.html";
         });
     }
 
     /* =======================
-       HOME PAGE (POST LOGIC)
+       HOME PAGE
     ======================== */
     if (window.location.pathname.includes("home.html")) {
-
         const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
-            window.location.href = "index.html";
-            return;
-        }
-
-        const logoutBtn = document.getElementById("logoutBtn");
-        const createPostBtn = document.getElementById("createPostBtn");
-        const modal = document.getElementById("postModal");
-        const postForm = document.getElementById("postForm");
-        const postsContainer = document.getElementById("postsContainer");
+        if (!session) return (window.location.href = "index.html");
 
         logoutBtn.onclick = async () => {
             await supabase.auth.signOut();
             window.location.href = "index.html";
         };
 
-        createPostBtn.onclick = () => modal.classList.remove("hidden");
+        createPostBtn.onclick = () => postModal.classList.remove("hidden");
 
-        modal.onclick = (e) => {
-            if (e.target === modal) modal.classList.add("hidden");
+        postModal.onclick = (e) => {
+            if (e.target === postModal) postModal.classList.add("hidden");
         };
 
         postForm.addEventListener("submit", async (e) => {
             e.preventDefault();
 
-            const title = document.getElementById("postTitle").value.trim();
-            const content = document.getElementById("content").value.trim();
-
-            if (!title || !content) {
-                alert("Title and content are required");
-                return;
-            }
+            const title = postTitle.value.trim();
+            const content = contentEditor.value.trim();
+            if (!title || !content) return alert("Title & content required");
 
             const { data: userRow } = await supabase
                 .from("User")
                 .select("user_id")
-                .eq("email", session.user.email)
+                .eq("auth_id", session.user.id)
                 .single();
 
-            if (!userRow) {
-                alert("User record not found in database");
-                return;
-            }
-
-            const { error } = await supabase
-                .from("post")
-                .insert({
-                    user_id: userRow.user_id,
-                    text_content: {
-                        title,
-                        body: content
-                    }
-                });
-
-            if (error) {
-                alert(error.message);
-                return;
-            }
+            await supabase.from("post").insert({
+                user_id: userRow.user_id,
+                text_content: { title, body: content }
+            });
 
             postForm.reset();
-            modal.classList.add("hidden");
+            postModal.classList.add("hidden");
             loadPosts();
         });
 
         async function loadPosts() {
             postsContainer.innerHTML = "";
 
-            const { data, error } = await supabase
+            const { data } = await supabase
                 .from("post")
-                .select(`
-                    id,
-                    text_content,
-                    created_at,
-                    "User" (
-                        name,
-                        user_name
-                    )
-                `)
+                .select(`text_content, created_at, "User"(name, user_name)`)
                 .order("created_at", { ascending: false });
 
-            if (error) {
-                alert(error.message);
-                return;
-            }
-
             data.forEach(post => {
-                const div = document.createElement("div");
-                div.className = "post-card";
-
-                div.innerHTML = `
+                postsContainer.innerHTML += `
+                  <div class="post-card">
                     <div class="post-header">
-                        <div class="post-author-name">
-                            ${post.User?.name || "Unknown User"}
-                        </div>
-                        <div class="post-author-username">
-                            @${post.User?.user_name || ""}
-                        </div>
+                      <div class="post-author-name">${post.User.name}</div>
+                      <div class="post-author-username">@${post.User.user_name}</div>
                     </div>
-
-                    <div class="post-title">
-                        ${post.text_content?.title || ""}
-                    </div>
-
-                    <div class="post-content">
-                        ${post.text_content?.body || ""}
-                    </div>
-                `;
-
-                postsContainer.appendChild(div);
+                    <div class="post-title">${post.text_content.title}</div>
+                    <div class="post-content">${post.text_content.body}</div>
+                  </div>`;
             });
         }
 
         loadPosts();
     }
+
+    /* =======================
+       PROFILE PAGE
+    ======================== */
+    if (window.location.pathname.includes("profile.html")) {
+        const inputEducation = document.getElementById("inputEducation");
+        const inputCountry = document.getElementById("inputCountry");
+        const inputSkills = document.getElementById("inputSkills");
+        const inputTwitter = document.getElementById("inputTwitter");
+        const inputFacebook = document.getElementById("inputFacebook");
+        const inputLinkedIn = document.getElementById("inputLinkedIn");
+        const inputAbout = document.getElementById("inputAbout");
+        const profileForm = document.querySelector("#profile form");
+
+        await loadProfile();
+
+async function loadProfile() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+        window.location.href = "index.html";
+        return;
+    }
+
+    /* =========================
+       USER (IDENTITY)
+    ========================== */
+    const { data: user } = await supabase
+        .from("User")
+        .select("user_id, name, user_name, email")
+        .eq("auth_id", session.user.id)
+        .single();
+
+    // LEFT PROFILE CARD
+    document.getElementById("profileName").textContent = user.name || "";
+    document.getElementById("profileUsername").textContent = `@${user.user_name || ""}`;
+    document.getElementById("profileEmail").textContent = user.email || "";
+
+    // OVERVIEW → PROFILE DETAILS
+    const viewFullName = document.getElementById("viewFullName");
+    if (viewFullName) {
+        viewFullName.textContent = user.name || "-";
+    }
+
+    /* =========================
+       USER PROFILE DATA
+    ========================== */
+    const { data: profile } = await supabase
+        .from("user_profile")
+        .select("*")
+        .eq("user_id", user.user_id)
+        .single();
+
+    // LEFT SIDEBAR
+    profileEducation.textContent = profile.education || "-";
+    profileCountry.textContent = profile.country || "-";
+
+    // OVERVIEW
+    profileAbout.textContent = profile.about_me || "";
+    viewEducation.textContent = profile.education || "-";
+    viewCountry.textContent = profile.country || "-";
+
+    // FORM VALUES
+    inputEducation.value = profile.education || "";
+    inputCountry.value = profile.country || "";
+    inputSkills.value = profile.skills_text || "";
+    inputTwitter.value = profile.twitter_url || "";
+    inputFacebook.value = profile.facebook_url || "";
+    inputLinkedIn.value = profile.linkedin_url || "";
+    inputAbout.value = profile.about_me || "";
+
+    /* =========================
+       SKILLS (FIXED)
+    ========================== */
+    const skillsBox = document.getElementById("skillsContainer");
+    skillsBox.innerHTML = "";
+
+    (profile.skills_text || "")
+        .split(",")
+        .map(s => s.trim())
+        .filter(Boolean)
+        .forEach(skill => {
+            skillsBox.innerHTML +=
+              `<span class="badge text-bg-primary me-1 mb-1">${skill}</span>`;
+        });
+}
+
+        profileForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            const { data: { session } } = await supabase.auth.getSession();
+
+            const { data: user } = await supabase
+                .from("User")
+                .select("user_id")
+                .eq("auth_id", session.user.id)
+                .single();
+
+            await supabase.from("user_profile").update({
+                education: inputEducation.value,
+                country: inputCountry.value,
+                skills_text: inputSkills.value,
+                twitter_url: inputTwitter.value,
+                facebook_url: inputFacebook.value,
+                linkedin_url: inputLinkedIn.value,
+                about_me: inputAbout.value,
+                updated_at: new Date()
+            }).eq("user_id", user.user_id);
+
+            alert("Profile updated");
+            loadProfile();
+        });
+    }
+
 });
