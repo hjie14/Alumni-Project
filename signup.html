@@ -3,60 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <title>Sign Up</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="styles.css">
 </head>
-<body>
+<body class="auth-body">
 
-<header class="site-header">
-    <h1>Alumni Engagement and Networking System</h1>
-</header>
-
-<div class="login-container">
-    <div class="login-card">
-        <div class="login-header">
-            <h2>Create Account</h2>
+    <div class="auth-card">
+        <div class="auth-header">
+            <h1>Sign up</h1>
+            <p>Make the most of your professional life</p>
         </div>
 
-<form id="signupForm">
+        <form id="signupForm" class="form-group">
+            
+            <div class="input-container">
+                <input type="text" id="signupName" placeholder="Full Name" required>
+            </div>
 
-    <div class="form-group">
-        <div class="input-wrapper">
-            <input type="text" id="signupName" required>
-            <label>Full Name</label>
-        </div>
-    </div>
+            <div class="input-container">
+                <input type="text" id="signupUsername" placeholder="Username (Handle)" required>
+            </div>
 
-    <div class="form-group">
-        <div class="input-wrapper">
-            <input type="text" id="signupUsername" required>
-            <label>Username</label>
-        </div>
-    </div>
+            <div class="input-container">
+                <input type="email" id="signupEmail" placeholder="Email" required>
+            </div>
 
-    <div class="form-group">
-        <div class="input-wrapper">
-            <input type="email" id="signupEmail" required>
-            <label>Email</label>
-        </div>
-    </div>
+            <div class="input-container">
+                <input type="password" id="signupPassword" placeholder="Password (6+ characters)" required>
+            </div>
 
-    <div class="form-group">
-        <div class="input-wrapper">
-            <input type="password" id="signupPassword" required>
-            <label>Password</label>
-        </div>
-    </div>
-</form>
+            <div style="font-size: 12px; color: #666; text-align: center;">
+                By clicking Agree & Join, you agree to the User Agreement, Privacy Policy, and Cookie Policy.
+            </div>
 
-            <button class="login-btn">Create Account</button>
+            <button type="submit" class="auth-submit-btn">Agree & Join</button>
         </form>
-
-        <div class="signup-link">
-            <p>Already have an account? <a href="index.html">Sign in</a></p>
-        </div>
     </div>
-</div>
 
-<script type="module" src="script.js"></script>
+    <div class="auth-footer">
+        Already have an account? <a href="index.html">Sign in</a>
+    </div>
+
+    <script type="module" src="script.js"></script>
 </body>
 </html>

@@ -1,317 +1,413 @@
-import { supabase } from "./supabase.js";
+import { supabase } from './supabase.js';
 
-/* =======================
-   COMMON FUNCTIONS
-======================== */
-function validateEmail(email) {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-}
-
-/* =======================
-   MAIN ENTRY
-======================== */
-document.addEventListener("DOMContentLoaded", async () => {
-
-/* =======================
-   GLOBAL HEADER BUTTONS
-======================== */
-const logoutBtn = document.getElementById("logoutBtn");
-const menuBtn = document.getElementById("menuBtn");
-const sidebar = document.getElementById("sidebar");
-const closeSidebar = document.getElementById("closeSidebar");
-
-// Logout (ALL pages)
-if (logoutBtn) {
-    logoutBtn.addEventListener("click", async () => {
-        await supabase.auth.signOut();
-        window.location.href = "index.html";
-    });
-}
-
-// Open sidebar
-if (menuBtn && sidebar) {
-    menuBtn.addEventListener("click", () => {
-        sidebar.classList.add("open");
-    });
-}
-
-// Close sidebar
-if (closeSidebar && sidebar) {
-    closeSidebar.addEventListener("click", () => {
-        sidebar.classList.remove("open");
-    });
-}
-
-/* =======================
-   SIDEBAR NAVIGATION
-======================== */
-const navProfile = document.getElementById("navProfile");
-
-if (navProfile) {
-    navProfile.addEventListener("click", () => {
-        sidebar?.classList.remove("open");
-        window.location.href = "profile.html";
-    });
-}
-
-    /* =======================
-       LOGIN PAGE
-    ======================== */
-    const loginForm = document.getElementById("loginForm");
-
-    if (loginForm) {
-        const emailInput = document.getElementById("email");
-        const passwordInput = document.getElementById("password");
-        const passwordToggle = document.getElementById("passwordToggle");
-        const loginBtn = document.querySelector(".login-btn");
-
-        passwordToggle?.addEventListener("click", () => {
-            passwordInput.type =
-                passwordInput.type === "password" ? "text" : "password";
-        });
-
-        loginForm.addEventListener("submit", async (e) => {
-            e.preventDefault();
-
-            const email = emailInput.value.trim();
-            const password = passwordInput.value.trim();
-
-            if (!email || !password) return alert("Email and password required");
-            if (!validateEmail(email)) return alert("Invalid email format");
-
-            loginBtn.classList.add("loading");
-
-            const { error } = await supabase.auth.signInWithPassword({
-                email,
-                password
-            });
-
-            loginBtn.classList.remove("loading");
-
-            if (error) return alert("Invalid email or password");
-
-            window.location.href = "home.html";
-        });
-    }
-
+document.addEventListener('DOMContentLoaded', async () => {
     
+    // --- GLOBAL VARS ---
+    const path = window.location.pathname;
+    let currentUserAuth = null;
+    let currentPublicUser = null; 
+    let currentProfileData = null;
 
-    /* =======================
-       SIGNUP PAGE
-    ======================== */
-    const signupForm = document.getElementById("signupForm");
+    // --- CHECK SESSION ---
+    const { data: { session } } = await supabase.auth.getSession();
+    currentUserAuth = session?.user || null;
 
-    if (signupForm) {
-        signupForm.addEventListener("submit", async (e) => {
-            e.preventDefault();
+    if (currentUserAuth) {
+        // Fetch 'User' table data
+        const { data: userData } = await supabase
+            .from('User')
+            .select('*')
+            .eq('auth_id', currentUserAuth.id)
+            .single();
 
-            const name = signupName.value.trim();
-            const username = signupUsername.value.trim();
-            const email = signupEmail.value.trim();
-            const password = signupPassword.value.trim();
-
-            if (!name || !username || !email || !password)
-                return alert("All fields required");
-
-            const { data: authData, error } = await supabase.auth.signUp({
-                email,
-                password
-            });
-
-            if (error) return alert(error.message);
-
-            const { error: insertError } = await supabase
-                .from("User")
-                .insert({
-                    email,
-                    user_name: username,
-                    name,
-                    user_type: "user",
-                    auth_id: authData.user.id
-                });
-
-            if (insertError) return alert(insertError.message);
-
-            alert("Account created. Please sign in.");
-            window.location.href = "index.html";
-        });
+        if (userData) {
+            currentPublicUser = userData;
+            // Fetch 'user_profile' data
+            const { data: profileData } = await supabase
+                .from('user_profile')
+                .select('*')
+                .eq('user_id', currentPublicUser.user_id)
+                .single();
+            currentProfileData = profileData || {}; 
+        }
     }
 
-    /* =======================
-       HOME PAGE
-    ======================== */
-    if (window.location.pathname.includes("home.html")) {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) return (window.location.href = "index.html");
+    // --- INITIALIZERS ---
+    setupPasswordToggle();
+    setupAuthForms();
+    setupCommonUI();
 
-        logoutBtn.onclick = async () => {
-            await supabase.auth.signOut();
-            window.location.href = "index.html";
-        };
+    // Logic Router
+    if (path.includes('profile.html')) {
+        if (!currentPublicUser) window.location.href = 'index.html';
+        else setupProfilePage();
+    } else if (path.includes('connect.html')) {
+        if (!currentPublicUser) window.location.href = 'index.html';
+        else setupConnectPage();
+    } else if (path.includes('notifications.html')) {
+        if (!currentPublicUser) window.location.href = 'index.html';
+        else setupNotificationsPage();
+    } else if (path.includes('home.html') || path === '/' || path.endsWith('/')) {
+        setupHomePage();
+    }
 
-        createPostBtn.onclick = () => postModal.classList.remove("hidden");
-
-        postModal.onclick = (e) => {
-            if (e.target === postModal) postModal.classList.add("hidden");
-        };
-
-        postForm.addEventListener("submit", async (e) => {
-            e.preventDefault();
-
-            const title = postTitle.value.trim();
-            const content = contentEditor.value.trim();
-            if (!title || !content) return alert("Title & content required");
-
-            const { data: userRow } = await supabase
-                .from("User")
-                .select("user_id")
-                .eq("auth_id", session.user.id)
-                .single();
-
-            await supabase.from("post").insert({
-                user_id: userRow.user_id,
-                text_content: { title, body: content }
-            });
-
-            postForm.reset();
-            postModal.classList.add("hidden");
-            loadPosts();
-        });
-
-        async function loadPosts() {
-            postsContainer.innerHTML = "";
-
-            const { data } = await supabase
-                .from("post")
-                .select(`text_content, created_at, "User"(name, user_name)`)
-                .order("created_at", { ascending: false });
-
-            data.forEach(post => {
-                postsContainer.innerHTML += `
-                  <div class="post-card">
-                    <div class="post-header">
-                      <div class="post-author-name">${post.User.name}</div>
-                      <div class="post-author-username">@${post.User.user_name}</div>
-                    </div>
-                    <div class="post-title">${post.text_content.title}</div>
-                    <div class="post-content">${post.text_content.body}</div>
-                  </div>`;
+    // --- COMMON UI (Sidebar) ---
+    function setupCommonUI() {
+        const sidebarUser = document.getElementById('sidebarUser');
+        if (currentPublicUser && sidebarUser) {
+            const initial = currentPublicUser.name.charAt(0).toUpperCase();
+            sidebarUser.innerHTML = `
+                <div class="user-avatar-sm" style="background-color:#0f1419; color:white;">${initial}</div>
+                <div class="user-meta" style="display:flex; flex-direction:column; margin-left:10px;">
+                    <span style="font-weight:700;">${currentPublicUser.name}</span>
+                    <span style="color:#536471; font-size:13px;">@${currentPublicUser.user_name}</span>
+                </div>
+            `;
+            sidebarUser.addEventListener('click', async () => {
+                if(confirm(`Log out?`)) { await supabase.auth.signOut(); window.location.href = 'index.html'; }
             });
         }
-
-        loadPosts();
     }
 
-    /* =======================
-       PROFILE PAGE
-    ======================== */
-    if (window.location.pathname.includes("profile.html")) {
-        const inputEducation = document.getElementById("inputEducation");
-        const inputCountry = document.getElementById("inputCountry");
-        const inputSkills = document.getElementById("inputSkills");
-        const inputTwitter = document.getElementById("inputTwitter");
-        const inputFacebook = document.getElementById("inputFacebook");
-        const inputLinkedIn = document.getElementById("inputLinkedIn");
-        const inputAbout = document.getElementById("inputAbout");
-        const profileForm = document.querySelector("#profile form");
+    // --- CONNECT PAGE LOGIC (Search & Request) ---
+    function setupConnectPage() {
+        const searchInput = document.getElementById('connectSearchInput');
+        const container = document.getElementById('connectContainer');
 
-        await loadProfile();
+        fetchUsers(''); 
 
-async function loadProfile() {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-        window.location.href = "index.html";
-        return;
-    }
-
-    /* =========================
-       USER (IDENTITY)
-    ========================== */
-    const { data: user } = await supabase
-        .from("User")
-        .select("user_id, name, user_name, email")
-        .eq("auth_id", session.user.id)
-        .single();
-
-    // LEFT PROFILE CARD
-    document.getElementById("profileName").textContent = user.name || "";
-    document.getElementById("profileUsername").textContent = `@${user.user_name || ""}`;
-    document.getElementById("profileEmail").textContent = user.email || "";
-
-    // OVERVIEW → PROFILE DETAILS
-    const viewFullName = document.getElementById("viewFullName");
-    if (viewFullName) {
-        viewFullName.textContent = user.name || "-";
-    }
-
-    /* =========================
-       USER PROFILE DATA
-    ========================== */
-    const { data: profile } = await supabase
-        .from("user_profile")
-        .select("*")
-        .eq("user_id", user.user_id)
-        .single();
-
-    // LEFT SIDEBAR
-    profileEducation.textContent = profile.education || "-";
-    profileCountry.textContent = profile.country || "-";
-
-    // OVERVIEW
-    profileAbout.textContent = profile.about_me || "";
-    viewEducation.textContent = profile.education || "-";
-    viewCountry.textContent = profile.country || "-";
-
-    // FORM VALUES
-    inputEducation.value = profile.education || "";
-    inputCountry.value = profile.country || "";
-    inputSkills.value = profile.skills_text || "";
-    inputTwitter.value = profile.twitter_url || "";
-    inputFacebook.value = profile.facebook_url || "";
-    inputLinkedIn.value = profile.linkedin_url || "";
-    inputAbout.value = profile.about_me || "";
-
-    /* =========================
-       SKILLS (FIXED)
-    ========================== */
-    const skillsBox = document.getElementById("skillsContainer");
-    skillsBox.innerHTML = "";
-
-    (profile.skills_text || "")
-        .split(",")
-        .map(s => s.trim())
-        .filter(Boolean)
-        .forEach(skill => {
-            skillsBox.innerHTML +=
-              `<span class="badge text-bg-primary me-1 mb-1">${skill}</span>`;
+        searchInput.addEventListener('input', (e) => {
+            fetchUsers(e.target.value);
         });
-}
 
-        profileForm.addEventListener("submit", async (e) => {
+        async function fetchUsers(query) {
+            let dbQuery = supabase.from('User').select('*').neq('user_id', currentPublicUser.user_id);
+            if(query.trim().length > 0) {
+                dbQuery = dbQuery.ilike('name', `%${query}%`);
+            } else {
+                dbQuery = dbQuery.limit(10);
+            }
+
+            const { data: users, error } = await dbQuery;
+            container.innerHTML = '';
+            
+            if(users) {
+                users.forEach(user => {
+                    const initial = user.name.charAt(0).toUpperCase();
+                    const item = document.createElement('div');
+                    item.className = 'connect-item';
+                    item.innerHTML = `
+                        <div class="connect-info">
+                            <div class="user-avatar-sm" style="background-color:#0f1419; color:white;">${initial}</div>
+                            <div>
+                                <div style="font-weight:700;">${user.name}</div>
+                                <div style="color:#536471; font-size:14px;">@${user.user_name}</div>
+                            </div>
+                        </div>
+                        <button class="connect-btn" data-id="${user.user_id}" data-name="${user.name}">Connect</button>
+                    `;
+                    container.appendChild(item);
+                });
+
+                document.querySelectorAll('.connect-btn').forEach(btn => {
+                    btn.addEventListener('click', async function() {
+                        const targetId = this.getAttribute('data-id');
+                        
+                        this.innerText = 'Request sent';
+                        this.classList.add('sent');
+                        this.disabled = true;
+
+                        const msgPayload = {
+                            type: 'connection_request',
+                            sender_id: currentPublicUser.user_id,
+                            sender_name: currentPublicUser.name,
+                            sender_username: currentPublicUser.user_name
+                        };
+
+                        await supabase.from('notification').insert([{
+                            user_id: targetId,
+                            message: msgPayload, 
+                            read_status: false
+                        }]);
+                    });
+                });
+            }
+        }
+    }
+
+    // --- NOTIFICATIONS PAGE LOGIC ---
+    async function setupNotificationsPage() {
+        const container = document.getElementById('notificationsContainer');
+        const { data: notifs, error } = await supabase
+            .from('notification')
+            .select('*')
+            .eq('user_id', currentPublicUser.user_id)
+            .order('created_at', { ascending: false });
+
+        container.innerHTML = '';
+
+        if(notifs && notifs.length > 0) {
+            notifs.forEach(notif => {
+                const msg = notif.message;
+                
+                if(msg && msg.type === 'connection_request') {
+                    const initial = msg.sender_name.charAt(0).toUpperCase();
+                    const el = document.createElement('div');
+                    el.className = 'notification-item';
+                    el.innerHTML = `
+                         <div class="user-avatar-sm" style="background-color:#0f1419; color:white;">${initial}</div>
+                         <div class="notif-content">
+                            <div class="notif-header">
+                                <span style="font-weight:700;">${msg.sender_name}</span>
+                            </div>
+                            <div class="notif-text">Sent you a connection request</div>
+                            <div class="notif-actions">
+                                <button class="btn-accept" data-id="${notif.id}" data-sender="${msg.sender_id}">Accept</button>
+                                <button class="btn-decline" data-id="${notif.id}">Decline</button>
+                            </div>
+                         </div>
+                    `;
+                    container.appendChild(el);
+                } 
+                else if (msg && msg.type === 'request_accepted') {
+                     const initial = msg.acceptor_name.charAt(0).toUpperCase();
+                     const el = document.createElement('div');
+                     el.className = 'notification-item';
+                     el.innerHTML = `
+                         <div class="user-avatar-sm" style="background-color:#1d9bf0; color:white;">${initial}</div>
+                         <div class="notif-content">
+                            <div class="notif-header">
+                                <span style="font-weight:700;">${msg.acceptor_name}</span>
+                            </div>
+                            <div class="notif-text">Accepted your connection request.</div>
+                            <div class="notif-actions">
+                                <button class="btn-accept view-info-btn" data-email="${msg.email}">View Info</button>
+                            </div>
+                         </div>
+                    `;
+                    container.appendChild(el);
+                }
+            });
+
+            document.querySelectorAll('.btn-accept:not(.view-info-btn)').forEach(btn => {
+                btn.addEventListener('click', async function() {
+                    const notifId = this.getAttribute('data-id');
+                    const senderId = this.getAttribute('data-sender');
+
+                    this.innerText = "Accepted";
+                    this.disabled = true;
+                    this.parentElement.querySelector('.btn-decline').style.display = 'none';
+
+                    await supabase.from('notification').delete().eq('id', notifId);
+                    
+                    const payload = {
+                        type: 'request_accepted',
+                        acceptor_name: currentPublicUser.name,
+                        email: currentPublicUser.email
+                    };
+
+                    await supabase.from('notification').insert([{
+                        user_id: senderId,
+                        message: payload,
+                        read_status: false
+                    }]);
+                });
+            });
+
+            document.querySelectorAll('.btn-decline').forEach(btn => {
+                btn.addEventListener('click', async function() {
+                    const notifId = this.getAttribute('data-id');
+                    await supabase.from('notification').delete().eq('id', notifId);
+                    this.closest('.notification-item').remove();
+                });
+            });
+
+            document.querySelectorAll('.view-info-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const email = this.getAttribute('data-email');
+                    document.getElementById('infoModalText').innerText = "You can contact them at: " + email;
+                    document.getElementById('infoModal').style.display = 'block';
+                });
+            });
+
+        } else {
+            container.innerHTML = '<div style="padding:20px; text-align:center; color:#536471;">No notifications</div>';
+        }
+    }
+
+    // --- PROFILE PAGE LOGIC ---
+    function setupProfilePage() {
+        const initial = currentPublicUser.name.charAt(0).toUpperCase();
+        
+        document.getElementById('headerName').innerText = currentPublicUser.name;
+        document.getElementById('displayName').innerText = currentPublicUser.name;
+        document.getElementById('displayHandle').innerText = `@${currentPublicUser.user_name}`;
+        document.getElementById('profileAvatar').innerText = initial;
+        document.getElementById('inputName').value = currentPublicUser.name;
+
+        if (currentProfileData) {
+            document.getElementById('displayBio').innerText = currentProfileData.about_me || "No bio yet.";
+            
+            const skillsContainer = document.getElementById('skillsSection');
+            skillsContainer.innerHTML = '';
+            if(currentProfileData.skills_text) {
+                const skills = currentProfileData.skills_text.split(',').map(s => s.trim());
+                skills.forEach(skill => {
+                    if(skill) {
+                        const tag = document.createElement('span');
+                        tag.className = 'skill-tag';
+                        tag.innerText = skill;
+                        skillsContainer.appendChild(tag);
+                    }
+                });
+            }
+
+            if(currentProfileData.country) {
+                document.getElementById('metaLocation').style.display = 'flex';
+                document.getElementById('txtLocation').innerText = currentProfileData.country;
+            }
+            if(currentProfileData.education) {
+                document.getElementById('metaEducation').style.display = 'flex';
+                document.getElementById('txtEducation').innerText = currentProfileData.education;
+            }
+            if(currentProfileData.linkedin_url) {
+                document.getElementById('metaLink').style.display = 'flex';
+                document.getElementById('txtLink').href = currentProfileData.linkedin_url;
+                document.getElementById('txtLink').innerText = "Social Link";
+            }
+            
+            document.getElementById('inputBio').value = currentProfileData.about_me || "";
+            document.getElementById('inputEducation').value = currentProfileData.education || "";
+            document.getElementById('inputLocation').value = currentProfileData.country || "";
+            document.getElementById('inputSkills').value = currentProfileData.skills_text || "";
+            document.getElementById('inputWebsite').value = currentProfileData.linkedin_url || "";
+        }
+
+        const tabPosts = document.getElementById('tabPosts');
+        const tabEdit = document.getElementById('tabEdit');
+        const contentPosts = document.getElementById('postsContent');
+        const contentEdit = document.getElementById('editContent');
+        const editBtn = document.getElementById('editToggleBtn');
+
+        function switchTab(tab) {
+            if(tab === 'posts') {
+                tabPosts.classList.add('active'); tabEdit.classList.remove('active');
+                contentPosts.style.display = 'block'; contentEdit.style.display = 'none';
+            } else {
+                tabEdit.classList.add('active'); tabPosts.classList.remove('active');
+                contentEdit.style.display = 'block'; contentPosts.style.display = 'none';
+            }
+        }
+        tabPosts.onclick = () => switchTab('posts');
+        tabEdit.onclick = () => switchTab('edit');
+        editBtn.onclick = () => switchTab('edit');
+
+        document.getElementById('profileForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-
-            const { data: { session } } = await supabase.auth.getSession();
-
-            const { data: user } = await supabase
-                .from("User")
-                .select("user_id")
-                .eq("auth_id", session.user.id)
-                .single();
-
-            await supabase.from("user_profile").update({
-                education: inputEducation.value,
-                country: inputCountry.value,
-                skills_text: inputSkills.value,
-                twitter_url: inputTwitter.value,
-                facebook_url: inputFacebook.value,
-                linkedin_url: inputLinkedIn.value,
-                about_me: inputAbout.value,
+            const updates = {
+                user_id: currentPublicUser.user_id,
+                about_me: document.getElementById('inputBio').value,
+                education: document.getElementById('inputEducation').value,
+                country: document.getElementById('inputLocation').value,
+                skills_text: document.getElementById('inputSkills').value,
+                linkedin_url: document.getElementById('inputWebsite').value,
                 updated_at: new Date()
-            }).eq("user_id", user.user_id);
+            };
+            const { error } = await supabase.from('user_profile').upsert(updates, { onConflict: 'user_id' });
+            if(error) alert("Error: " + error.message);
+            else window.location.reload();
+        });
 
-            alert("Profile updated");
-            loadProfile();
+        fetchPosts(currentPublicUser.user_id);
+    }
+
+    // --- HOME PAGE LOGIC ---
+    function setupHomePage() {
+        if(currentPublicUser) {
+             const initial = currentPublicUser.name.charAt(0).toUpperCase();
+             document.querySelectorAll('.current-user-avatar').forEach(el => {
+                el.innerText = initial; el.style.backgroundColor = '#0f1419'; el.style.color = 'white';
+            });
+            setupInputLogic('inlineInput', 'inlinePostBtn');
+            setupInputLogic('modalInput', 'modalPostBtn');
+            
+            const modal = document.getElementById('postModal');
+            const closeBtn = document.querySelector('.close-modal');
+            const sidebarPostBtn = document.getElementById('sidebarPostBtn');
+            if(sidebarPostBtn) sidebarPostBtn.addEventListener('click', () => modal.style.display = 'block');
+            if(closeBtn) closeBtn.onclick = () => modal.style.display = "none";
+            window.onclick = (event) => { if (event.target == modal) modal.style.display = "none"; }
+        }
+        fetchPosts(null);
+    }
+
+    // --- UTILS ---
+    async function fetchPosts(userIdFilter = null) {
+        const container = document.getElementById(userIdFilter ? 'myPostsContainer' : 'postsContainer');
+        if(!container) return;
+        let query = supabase.from('post').select(`id, created_at, text_content, User ( name, user_name )`).order('created_at', { ascending: false });
+        if (userIdFilter) query = query.eq('user_id', userIdFilter);
+        const { data: posts, error } = await query;
+        if (error || !posts) { container.innerHTML = '<p style="padding:20px; text-align:center;">Failed to load posts.</p>'; return; }
+        container.innerHTML = '';
+        posts.forEach(post => {
+            const user = post.User || { name: 'Unknown', user_name: 'unknown' };
+            const initial = user.name.charAt(0).toUpperCase();
+            let contentText = typeof post.text_content === 'object' ? (post.text_content.body || "") : post.text_content;
+            const date = new Date(post.created_at).toLocaleDateString();
+            const postHTML = `
+                <article class="post">
+                    <div class="user-avatar-sm" style="background-color:#0f1419; color:white;">${initial}</div>
+                    <div style="flex:1;">
+                        <div class="post-header"><span class="post-name">${escapeHtml(user.name)}</span><span class="post-handle">@${escapeHtml(user.user_name)}</span><span class="post-time">· ${date}</span></div>
+                        <div class="post-content" style="margin-top:5px;">${escapeHtml(contentText)}</div>
+                    </div>
+                </article>`;
+            container.innerHTML += postHTML;
         });
     }
 
+    function setupInputLogic(inputId, btnId) {
+        const input = document.getElementById(inputId);
+        const btn = document.getElementById(btnId);
+        if(!input || !btn) return;
+        input.addEventListener('input', function() {
+            this.style.height = 'auto'; this.style.height = (this.scrollHeight) + 'px';
+            if(this.value.trim().length > 0) btn.classList.add('active'); else btn.classList.remove('active');
+        });
+        btn.addEventListener('click', async () => {
+            if (!currentPublicUser) return;
+            const { error } = await supabase.from('post').insert([{ text_content: { body: input.value }, user_id: currentPublicUser.user_id }]);
+            if (!error) { input.value = ''; if(document.getElementById('postModal')) document.getElementById('postModal').style.display="none"; fetchPosts(null); }
+        });
+    }
+
+    function setupPasswordToggle() {
+        const toggleBtn = document.getElementById('togglePassword');
+        if (toggleBtn) toggleBtn.addEventListener('click', () => {
+            const input = document.getElementById('password');
+            if (input.type === "password") { input.type = "text"; toggleBtn.innerText = "Hide"; } else { input.type = "password"; toggleBtn.innerText = "Show"; }
+        });
+    }
+
+    function setupAuthForms() {
+         /* (Keep existing Auth logic from previous response) */
+         const loginForm = document.getElementById('loginForm');
+         if(loginForm) loginForm.addEventListener('submit', async (e) => {
+             e.preventDefault();
+             const { error } = await supabase.auth.signInWithPassword({ email: document.getElementById('email').value, password: document.getElementById('password').value });
+             if(!error) window.location.href='home.html'; else alert(error.message);
+         });
+         const signupForm = document.getElementById('signupForm');
+         if(signupForm) signupForm.addEventListener('submit', async (e) => {
+             e.preventDefault();
+             const { data: authData, error: authError } = await supabase.auth.signUp({ email: document.getElementById('signupEmail').value, password: document.getElementById('signupPassword').value });
+             if(authData.user) {
+                 await supabase.from('User').insert([{ user_name: document.getElementById('signupUsername').value, name: document.getElementById('signupName').value, email: document.getElementById('signupEmail').value, auth_id: authData.user.id }]);
+                 window.location.href='index.html';
+             } else alert(authError.message);
+         });
+    }
+
+    function escapeHtml(text) { if(!text) return ""; return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;"); }
 });
