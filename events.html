@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Event Post</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="styles.css">
+  <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+</head>
+<body>
+
+<h1>Event Posting</h1>
+
+<nav>
+  <a href="home.html">Home</a> |
+  <a href="job_post.html">Job Posting</a>
+</nav>
+
+<hr>
+
+<h3>Add New Event</h3>
+
+<label>Event Title:</label><br>
+<input type="text" id="eventTitle"><br><br>
+
+<label>Company:</label><br>
+<input type="text" id="eventCompany"><br><br>
+
+<label>Description:</label><br>
+<textarea id="eventDesc"></textarea><br><br>
+
+<button onclick="addJob()">Submit Event</button>
+
+<hr>
+
+<h3>Posted Event</h3>
+<div id="eventList"></div>
+
+<script src="script.js"></script>
+</body>
+</html>

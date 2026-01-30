@@ -633,3 +633,80 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     function escapeHtml(text) { if(!text) return ""; return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;"); }
 });
+
+// ===== EVENTS =====
+let events = [];
+
+function addEvent() {
+  const title = document.getElementById("eventTitle").value;
+  const location = document.getElementById("eventLocation").value;
+  const desc = document.getElementById("eventDesc").value;
+
+  if (title === "" || location === "" || desc === "") {
+    alert("Please fill in all event fields.");
+    return;
+  }
+
+  events.push({ title, location, desc });
+  displayEvents();
+
+  document.getElementById("eventTitle").value = "";
+  document.getElementById("eventLocation").value = "";
+  document.getElementById("eventDesc").value = "";
+}
+
+function displayEvents() {
+  const list = document.getElementById("eventList");
+  if (!list) return;
+
+  list.innerHTML = "";
+
+  events.forEach(event => {
+    list.innerHTML += `
+      <div>
+        <strong>${event.title}</strong><br>
+        Location: ${event.location}<br>
+        ${event.desc}
+        <hr>
+      </div>
+    `;
+  });
+}
+
+// ===== JOB POSTS =====
+let jobs = [];
+
+function addJob() {
+  const title = document.getElementById("jobTitle").value;
+  const company = document.getElementById("jobCompany").value;
+  const desc = document.getElementById("jobDesc").value;
+
+  if (title === "" || company === "" || desc === "") {
+    alert("Please fill in all job fields.");
+    return;
+  }
+
+  jobs.push({ title, company, desc });
+  displayJobs();
+
+  document.getElementById("jobTitle").value = "";
+  document.getElementById("jobCompany").value = "";
+  document.getElementById("jobDesc").value = "";
+}
+
+function displayJobs() {
+  const list = document.getElementById("jobList");
+  if (!list) return;
+
+  list.innerHTML = "";
+
+  jobs.forEach(job => {
+    list.innerHTML += `
+      <div>
+        <strong>${job.title}</strong> at ${job.company}<br>
+        ${job.desc}
+        <hr>
+      </div>
+    `;
+  });
+}
