@@ -267,6 +267,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                             this.innerText = 'Error';
                             this.classList.remove('sent');
                             this.disabled = false;
+                            // ALERT THE ERROR TO THE USER
+                            alert("Failed to send request: " + error.message + "\n\n(Tip: Check your Supabase RLS policies!)");
                         }
                     });
                 });
