@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Job Post</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="styles.css">
+  <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+</head>
+
+<body class="auth-body">
+    <div class="auth-card">
+
+        <div class="auth-header">
+            <h1>Job Posting</h1>
+        </div>
+
+
+    <nav>
+    <a href="home.html">Home</a> |
+    <a href="events.html">Event Posting</a>
+    </nav>
+
+    <hr>
+
+    <h3>Add New Job</h3>
+
+    <label>Job Title:</label><br>
+    <input type="text" id="jobTitle"><br><br>
+
+    <label>Company:</label><br>
+    <input type="text" id="jobCompany"><br><br>
+
+    <label>Description:</label><br>
+    <textarea id="jobDesc"></textarea><br><br>
+
+    <button id="sidebarPostBtn" class="sidebar-post-btn" onclick="addJob()">Submit Job</button>
+
+    <hr>
+
+    <script src="script.js"></script>
+
+</body>
+</html>
