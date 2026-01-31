@@ -7,35 +7,37 @@
   <link rel="stylesheet" href="styles.css">
   <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
 </head>
-<body>
+<body class="auth-body">
+    <div class="auth-card">
 
-<h1>Event Posting</h1>
+        <div class="auth-header">
+            <h1>Event Posting</h1>
+        </div>
 
-<nav>
-  <a href="home.html">Home</a> |
-  <a href="job_post.html">Job Posting</a>
-</nav>
+        <nav>
+            <a href="home.html">Home</a> |
+            <a href="job_post.html">Job Posting</a>
+        </nav>
 
-<hr>
+        <hr>
 
-<h3>Add New Event</h3>
+        <h3>Add New Event</h3>
 
-<label>Event Title:</label><br>
-<input type="text" id="eventTitle"><br><br>
+        <label>Event Title:</label><br>
+        <input type="text" id="eventTitle"><br><br>
 
-<label>Company:</label><br>
-<input type="text" id="eventCompany"><br><br>
+        <label>Event Location:</label><br>
+        <input type="text" id="eventLocation"><br><br>
 
-<label>Description:</label><br>
-<textarea id="eventDesc"></textarea><br><br>
+        <label>Description:</label><br>
+        <textarea id="eventDesc"></textarea><br><br>
 
-<button onclick="addJob()">Submit Event</button>
+        <button id="sidebarPostBtn" class="sidebar-post-btn" onclick="addEvent()">Submit Event</button>
 
-<hr>
+        <hr>
+    </div>
 
-<h3>Posted Event</h3>
-<div id="eventList"></div>
+        <script type="module" src="script.js"></script>
 
-<script src="script.js"></script>
 </body>
 </html>

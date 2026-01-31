@@ -8,35 +8,37 @@
   <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
 </head>
 
-<body>
+<body class="auth-body">
+    <div class="auth-card">
 
-<h1>Job Posting</h1>
+        <div class="auth-header">
+            <h1>Job Posting</h1>
+        </div>
 
-<nav>
-  <a href="home.html">Home</a> |
-  <a href="events.html">Event Posting</a>
-</nav>
 
-<hr>
+    <nav>
+    <a href="home.html">Home</a> |
+    <a href="events.html">Event Posting</a>
+    </nav>
 
-<h3>Add New Job</h3>
+    <hr>
 
-<label>Job Title:</label><br>
-<input type="text" id="jobTitle"><br><br>
+    <h3>Add New Job</h3>
 
-<label>Company:</label><br>
-<input type="text" id="jobCompany"><br><br>
+    <label>Job Title:</label><br>
+    <input type="text" id="jobTitle"><br><br>
 
-<label>Description:</label><br>
-<textarea id="jobDesc"></textarea><br><br>
+    <label>Company:</label><br>
+    <input type="text" id="jobCompany"><br><br>
 
-<button onclick="addJob()">Submit Job</button>
+    <label>Description:</label><br>
+    <textarea id="jobDesc"></textarea><br><br>
 
-<hr>
+    <button id="sidebarPostBtn" class="sidebar-post-btn" onclick="addJob()">Submit Job</button>
 
-<h3>Posted Jobs</h3>
-<div id="jobList"></div>
+    <hr>
 
-<script src="script.js"></script>
+    <script src="script.js"></script>
+
 </body>
 </html>

@@ -48,6 +48,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Only run UI setup if we have a public user OR we are on public pages
     setupCommonUI();
 
+    addEvent();
+    addJob();
+
     // Logic Router
     if (path.includes('profile.html')) {
         if (!currentPublicUser) window.location.href = 'index.html';
