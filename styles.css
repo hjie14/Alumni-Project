@@ -142,9 +142,32 @@ button { cursor: pointer; border: none; outline: none; background: none; }
 .icon-row i { color: var(--primary-color); font-size: 20px; padding: 8px; border-radius: 50%; cursor: pointer; }
 .icon-row i:hover { background-color: #e8f5fd; }
 
-.post-submit-btn { background-color: #cfd9de; color: white; border-radius: 99px; padding: 8px 16px; font-weight: 700; font-size: 15px; pointer-events: none; }
-.post-submit-btn.active { background-color: var(--btn-black); pointer-events: auto; }
-.post-submit-btn.active:hover { background-color: var(--btn-black-hover); }
+.post-submit-btn {
+    background-color: var(--primary-color); 
+    color: white;
+    border-radius: 99px;
+    padding: 8px 16px;
+    font-weight: 700;
+    font-size: 15px;
+    border: none;
+    cursor: pointer;
+    opacity: 0.5;      
+    transition: 0.2s;
+}
+
+.post-submit-btn:disabled {
+    cursor: not-allowed; 
+}
+
+.post-submit-btn.active {
+    background-color: var(--primary-color);
+    opacity: 1;        
+    cursor: pointer;
+}
+
+.post-submit-btn.active:hover {
+    background-color: #1a8cd8; 
+}
 
 /* Posts */
 .post { padding: 12px 16px; border-bottom: 1px solid var(--border-color); display: flex; gap: 12px; cursor: pointer; transition: 0.2s; }
@@ -215,3 +238,248 @@ button { cursor: pointer; border: none; outline: none; background: none; }
 .logout-content p { color: var(--text-secondary); font-size: 15px; margin-bottom: 20px; }
 .btn-logout-confirm { background-color: var(--btn-black); color: white; padding: 12px; border-radius: 24px; font-weight: 700; font-size: 15px; width: 100%; }
 .btn-logout-cancel { background-color: white; border: 1px solid #cfd9de; color: var(--text-main); padding: 12px; border-radius: 24px; font-weight: 700; font-size: 15px; width: 100%; }
+
+/* ==============================
+   MENTOR DASHBOARD STYLES
+   ============================== */
+.stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    margin-bottom: 30px;
+}
+.stat-card {
+    background: #f7f9f9;
+    padding: 15px;
+    border-radius: 16px;
+    text-align: center;
+}
+.stat-number {
+    font-size: 24px;
+    font-weight: bold;
+    color: var(--btn-black);
+}
+.stat-label {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-top: 5px;
+}
+.section-title {
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 15px;
+    color: var(--btn-black);
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 10px;
+}
+/* Request Card */
+.request-card {
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-left: 5px solid var(--primary-color);
+    transition: background 0.2s, opacity 0.3s;
+}
+.request-card:hover {
+    background-color: #f8f9fa;
+}
+.meta-info {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+    text-transform: uppercase;
+}
+.request-card h3 {
+    margin: 0 0 5px 0;
+    font-size: 16px;
+}
+.request-card p {
+    margin: 10px 0;
+    color: var(--text-main);
+    font-size: 14px;
+    line-height: 1.5;
+}
+.action-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+.btn-action {
+    flex: 1;
+    padding: 10px;
+    border-radius: 20px;
+    border: none;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 14px;
+}
+.btn-accept {
+    background-color: var(--btn-black);
+    color: white;
+}
+.btn-decline {
+    background-color: white;
+    border: 1px solid #cfd9de;
+    color: #dc3545;
+}
+.empty-state {
+    text-align: center;
+    padding: 40px;
+    color: var(--text-secondary);
+    display: none;
+    background: #f7f9f9;
+    border-radius: 16px;
+}
+
+/* ==============================
+   COUNSELING STYLES
+   ============================== */
+.counselor-card {
+    padding: 20px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    gap: 15px;
+    align-items: flex-start;
+    transition: 0.2s;
+}
+.counselor-card:hover {
+    background-color: #f7f9f9;
+}
+.counselor-avatar {
+    width: 60px;
+    height: 60px;
+    background-color: #e1e8ed;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    font-weight: bold;
+    color: #536471;
+}
+.counselor-content {
+    flex: 1;
+}
+.counselor-name {
+    font-weight: 800;
+    font-size: 16px;
+    color: var(--text-main);
+}
+.counselor-spec {
+    color: var(--primary-color);
+    font-size: 14px;
+    margin-bottom: 5px;
+    font-weight: 500;
+}
+.counselor-time {
+    color: var(--text-secondary);
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+.book-btn {
+    background-color: var(--btn-black);
+    color: white;
+    padding: 8px 20px;
+    border-radius: 99px;
+    font-weight: 700;
+    font-size: 14px;
+    margin-top: 10px;
+}
+.book-btn:hover {
+    background-color: var(--btn-black-hover);
+}
+
+/* ==============================
+   FEEDBACK PAGE STYLES
+   ============================== */
+/* Special body class for the feedback page to center the card */
+.centered-layout-body {
+    background-color: #f4f7f6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    overflow: hidden; 
+}
+.feedback-card {
+    background-color: white;
+    width: 100%;
+    max-width: 500px;
+    padding: 40px;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    text-align: center;
+}
+.icon-header {
+    font-size: 50px;
+    color: #0f1419;
+    margin-bottom: 20px;
+}
+.feedback-card h2 {
+    margin: 0 0 10px 0;
+    color: #0f1419;
+}
+.feedback-card p {
+    margin: 0 0 25px 0;
+    color: #536471;
+    font-size: 15px;
+}
+.feedback-textarea {
+    width: 100%;
+    padding: 15px;
+    border-radius: 12px;
+    border: 1px solid #cfd9de;
+    font-family: inherit;
+    font-size: 16px;
+    resize: none;
+    box-sizing: border-box;
+    height: 150px;
+    margin-bottom: 20px;
+    background-color: #f9f9f9;
+}
+.feedback-textarea:focus {
+    outline: none;
+    border-color: #0f1419;
+    background-color: white;
+}
+.send-btn {
+    width: 100%;
+    padding: 15px;
+    background-color: #0f1419;
+    color: white;
+    border: none;
+    border-radius: 30px;
+    font-weight: bold;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.send-btn:hover {
+    background-color: #333;
+}
+.send-btn:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+.back-link {
+    display: block;
+    margin-top: 20px;
+    color: #536471;
+    text-decoration: none;
+    font-size: 14px;
+}
+.back-link:hover {
+    text-decoration: underline;
+}
+.success-box {
+    display: none;
+}
+.check-icon {
+    font-size: 60px;
+    color: #00ba7c;
+    margin-bottom: 20px;
+}

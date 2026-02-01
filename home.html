@@ -9,8 +9,27 @@
 </head>
 <body>
 
+<div id="postModal" class="modal">
+    <div class="modal-content">
+        <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+            <span class="close-modal">&times;</span>
+        </div>
+        <div class="composer-container" style="border: none; padding: 0;">
+            <div class="user-avatar-sm current-user-avatar">U</div>
+            <div style="flex: 1;">
+                <textarea id="modalInput" class="composer-textarea" placeholder="What's happening?" rows="3"></textarea>
+                <div class="composer-actions">
+                     <div class="icon-row">
+                        <i class='bx bx-image-alt'></i>
+                    </div>
+                    <button id="modalPostBtn" class="post-submit-btn">Post</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="layout">
-    <!-- LEFT SIDEBAR -->
     <header class="sidebar">
         <div>
             <div class="nav-link" style="width: 50px; height: 50px; justify-content: center;">
@@ -23,6 +42,12 @@
                 </a>
                 <a href="connect.html" class="nav-link">
                     <i class='bx bx-search'></i> <span>Connect</span>
+                </a>
+                <a href="mentor.html" class="nav-link">
+                    <i class='bx bx-group'></i> <span>Mentorship</span>
+                </a>
+                <a href="counseling.html" class="nav-link">
+                    <i class='bx bx-heart'></i> <span>Counseling</span>
                 </a>
                 <a href="notifications.html" class="nav-link">
                     <i class='bx bx-bell'></i> <span>Notifications</span>
@@ -44,13 +69,11 @@
         </div>
     </header>
 
-    <!-- MAIN FEED -->
     <main class="main-feed">
         <div class="feed-header">
             <span class="feed-title">Home</span>
         </div>
 
-        <!-- Inline Composer -->
         <div id="inlineComposer" class="composer-container" style="display:none;">
             <div class="user-avatar-sm current-user-avatar">U</div>
             <div style="flex: 1;">
@@ -73,36 +96,7 @@
         </div>
     </main>
 
-    <!-- RIGHT SIDEBAR -->
     <aside class="right-sidebar">
         <div class="search-box">
-            <i class='bx bx-search'></i>
-            <input type="text" placeholder="Search">
-        </div>
-    </aside>
-</div>
 
-<!-- POST MODAL -->
-<div id="postModal" class="modal">
-    <div class="modal-content">
-        <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
-            <span class="close-modal">&times;</span>
-        </div>
-        <div class="composer-container" style="border: none; padding: 0;">
-            <div class="user-avatar-sm current-user-avatar">U</div>
-            <div style="flex: 1;">
-                <textarea id="modalInput" class="composer-textarea" placeholder="What's happening?" rows="3"></textarea>
-                <div class="composer-actions">
-                     <div class="icon-row">
-                        <i class='bx bx-image-alt'></i>
-                    </div>
-                    <button id="modalPostBtn" class="post-submit-btn">Post</button>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<script type="module" src="script.js"></script>
-</body>
-</html>
+    <script type="module" src="script.js"></script>
