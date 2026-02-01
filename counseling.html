@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Counseling | AlumniConnect</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+</head>
+<body>
+
+<div class="layout">
+    
+    <header class="sidebar">
+        <div>
+            <div class="nav-link" style="width: 50px; height: 50px; justify-content: center;">
+                 <i class='bx bxs-network-chart' style="font-size: 30px;"></i>
+            </div>
+            
+            <nav>
+                <a href="home.html" class="nav-link">
+                    <i class='bx bxs-home-circle'></i> <span>Home</span>
+                </a>
+                
+                <a href="connect.html" class="nav-link">
+                    <i class='bx bx-search'></i> <span>Connect</span>
+                </a>
+
+                <a href="mentor.html" class="nav-link">
+                    <i class='bx bx-group'></i> <span>Mentorship</span>
+                </a>
+
+                <a href="counseling.html" class="nav-link active">
+                    <i class='bx bx-heart'></i> <span>Counseling</span>
+                </a>
+
+                <a href="notifications.html" class="nav-link">
+                    <i class='bx bx-bell'></i> <span>Notifications</span>
+                </a>
+                
+                <a href="profile.html" class="nav-link">
+                    <i class='bx bx-user'></i> <span>Profile</span>
+                </a>
+            </nav>
+
+            <button onclick="window.location.href='home.html'" class="sidebar-post-btn">Post</button>
+        </div>
+        
+        <div id="sidebarUser" class="user-pill">
+            <div class="user-avatar-sm">?</div>
+            <div class="user-meta">
+                <span class="post-name">Loading...</span>
+                <span class="user-handle" style="font-size: 13px;">@...</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-feed">
+        <div class="feed-header">
+            <span class="feed-title">Counseling & Support</span>
+        </div>
+
+        <div style="padding: 20px; border-bottom: 1px solid var(--border-color); background: #f7f9f9;">
+            <h3 style="margin:0 0 5px 0;">Need someone to talk to?</h3>
+            <p style="color: var(--text-secondary); font-size: 14px; margin:0;">
+                Our counselors are here to help with academic stress, career anxiety, and personal well-being.
+            </p>
+        </div>
+
+        <div id="counselors-container">
+            <div style="padding:40px; text-align:center; color:#536471;">
+                <i class='bx bx-loader-alt bx-spin'></i> Loading counselors...
+            </div>
+        </div>
+    </main>
+
+    <aside class="right-sidebar">
+        <div class="search-box">
+            <i class='bx bx-search'></i>
+            <input type="text" placeholder="Search">
+        </div>
+        
+        <div style="background: #f7f9f9; padding: 15px; border-radius: 16px; margin-top: 20px;">
+            <h4 style="margin:0 0 10px 0;">Emergency?</h4>
+            <p style="font-size: 13px; color: #536471;">If this is an emergency, please contact campus security or local emergency services immediately.</p>
+        </div>
+    </aside>
+
+</div>
+
+<div id="bookingModal" class="modal">
+    <div class="modal-content">
+        <h2 style="font-size: 20px; margin-bottom: 10px;">Book Session</h2>
+        <p style="color: var(--text-secondary); margin-bottom: 15px;">
+            With: <b id="modalCounselorName">...</b>
+        </p>
+        
+        <div class="input-container">
+            <label style="font-size:13px; font-weight:bold;">Reason for visit (Optional)</label>
+            <textarea id="bookingReason" rows="3" class="composer-textarea" placeholder="E.g. Feeling overwhelmed..." style="border:1px solid #cfd9de; padding:10px; border-radius:8px; font-size:16px; margin-top:5px;"></textarea>
+        </div>
+
+        <div style="display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end;">
+            <button onclick="window.closeCounselingModal()" style="font-weight: bold; color: var(--text-main);">Cancel</button>
+            <button id="confirmBtn" onclick="window.submitBooking()" class="book-btn">Confirm Booking</button>
+        </div>
+    </div>
+</div>
+
+<script type="module" src="script.js"></script>
+</body>
+</html>

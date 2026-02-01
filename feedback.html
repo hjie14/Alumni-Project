@@ -2,19 +2,21 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Notifications</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Send Feedback | AlumniConnect</title>
     <link rel="stylesheet" href="styles.css">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
 </head>
 <body>
 
 <div class="layout">
+    
     <header class="sidebar">
         <div>
             <div class="nav-link" style="width: 50px; height: 50px; justify-content: center;">
                  <i class='bx bxs-network-chart' style="font-size: 30px;"></i>
             </div>
+            
             <nav>
                 <a href="home.html" class="nav-link">
                     <i class='bx bxs-home-circle'></i> <span>Home</span>
@@ -34,47 +36,64 @@
                 <a href="profile.html" class="nav-link">
                     <i class='bx bx-user'></i> <span>Profile</span>
                 </a>
+                
+                <a href="feedback.html" class="nav-link active">
+                    <i class='bx bx-message-dots'></i> <span>Feedback</span>
+                </a>
             </nav>
+
             <button onclick="window.location.href='home.html'" class="sidebar-post-btn">Post</button>
         </div>
+
         <div id="sidebarUser" class="user-pill">
-            <div class="user-avatar-sm">?</div>
+            <div class="user-avatar-sm">G</div>
             <div class="user-meta">
-                <span>Loading...</span>
+                <span class="post-name">Guest</span>
+                <span class="user-handle" style="font-size: 13px;">@guest</span>
             </div>
         </div>
     </header>
 
     <main class="main-feed">
         <div class="feed-header">
-            <span class="feed-title">Notifications</span>
-        </div>
-        <div class="profile-tabs" style="margin-top:0;">
-            <div class="tab-item active">All</div>
+            <span class="feed-title">Feedback</span>
         </div>
 
-        <div id="notificationsContainer">
-            <div style="padding:20px; text-align:center; color:#536471;">Loading notifications...</div>
-        </div>
+        <div style="padding: 40px 20px; display: flex; justify-content: center;">
+            
+            <div class="feedback-card" style="box-shadow: none; border: 1px solid var(--border-color); width: 100%;">
+                
+                <form id="feedbackForm">
+                    <i class='bx bxs-message-square-edit icon-header'></i>
+                    <h2>We value your feedback</h2>
+                    <p>Let us know how we can improve your experience.</p>
+                    
+                    <textarea id="feedbackText" class="feedback-textarea" name="user_feedback" placeholder="Type your message here..." required></textarea>
+                    
+                    <button type="submit" id="submitBtn" class="send-btn">Send Feedback</button>
+                </form>
+
+                <div id="success-view" class="success-box">
+                    <i class='bx bxs-check-circle check-icon'></i>
+                    <h2>Thank You!</h2>
+                    <p>Your feedback has been saved to the database.</p>
+                    <button class="send-btn" style="background-color:#ccc; color:#333;" onclick="window.location.href='home.html'">Return to Dashboard</button>
+                </div>
+
+            </div>
+            </div>
     </main>
 
     <aside class="right-sidebar">
         <div class="search-box">
             <i class='bx bx-search'></i>
-            <input type="text" placeholder="Search">
+            <input type="text" placeholder="Search AlumniConnect">
         </div>
     </aside>
-</div>
 
-<!-- INFO MODAL -->
-<div id="infoModal" class="modal">
-    <div class="modal-content">
-        <h3>Contact Info</h3>
-        <p style="margin-top:10px; margin-bottom:20px;" id="infoModalText">...</p>
-        <button onclick="document.getElementById('infoModal').style.display='none'" class="btn-accept" style="width:100%">Close</button>
-    </div>
 </div>
 
 <script type="module" src="script.js"></script>
+
 </body>
 </html>
