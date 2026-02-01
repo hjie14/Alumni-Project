@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Send Feedback | AlumniConnect</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+</head>
+<body>
+
+<div class="layout">
+    
+    <header class="sidebar">
+        <div>
+            <div class="nav-link" style="width: 50px; height: 50px; justify-content: center;">
+                 <i class='bx bxs-network-chart' style="font-size: 30px;"></i>
+            </div>
+            
+            <nav>
+                <a href="home.html" class="nav-link">
+                    <i class='bx bxs-home-circle'></i> <span>Home</span>
+                </a>
+                <a href="connect.html" class="nav-link">
+                    <i class='bx bx-search'></i> <span>Connect</span>
+                </a>
+                <a href="mentor.html" class="nav-link">
+                    <i class='bx bx-group'></i> <span>Mentorship</span>
+                </a>
+                <a href="bookmarks.html" class="nav-link">
+                    <i class='bx bx-bookmark'></i> <span>Bookmarks</span>
+                </a>
+                <a href="notifications.html" class="nav-link">
+                    <i class='bx bx-bell'></i> <span>Notifications</span>
+                </a>
+                <a href="profile.html" class="nav-link">
+                    <i class='bx bx-user'></i> <span>Profile</span>
+                </a>
+                
+                <a href="feedback.html" class="nav-link active">
+                    <i class='bx bx-message-dots'></i> <span>Feedback</span>
+                </a>
+            </nav>
+
+            <button onclick="window.location.href='home.html'" class="sidebar-post-btn">Post</button>
+        </div>
+
+        <div id="sidebarUser" class="user-pill">
+            <div class="user-avatar-sm">G</div>
+            <div class="user-meta">
+                <span class="post-name">Guest</span>
+                <span class="user-handle" style="font-size: 13px;">@guest</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-feed">
+        <div class="feed-header">
+            <span class="feed-title">Feedback</span>
+        </div>
+
+        <div style="padding: 40px 20px; display: flex; justify-content: center;">
+            
+            <div class="feedback-card" style="box-shadow: none; border: 1px solid var(--border-color); width: 100%;">
+                
+                <form id="feedbackForm">
+                    <i class='bx bxs-message-square-edit icon-header'></i>
+                    <h2>We value your feedback</h2>
+                    <p>Let us know how we can improve your experience.</p>
+                    
+                    <textarea id="feedbackText" class="feedback-textarea" name="user_feedback" placeholder="Type your message here..." required></textarea>
+                    
+                    <button type="submit" id="submitBtn" class="send-btn">Send Feedback</button>
+                </form>
+
+                <div id="success-view" class="success-box">
+                    <i class='bx bxs-check-circle check-icon'></i>
+                    <h2>Thank You!</h2>
+                    <p>Your feedback has been saved to the database.</p>
+                    <button class="send-btn" style="background-color:#ccc; color:#333;" onclick="window.location.href='home.html'">Return to Dashboard</button>
+                </div>
+
+            </div>
+            </div>
+    </main>
+
+    <aside class="right-sidebar">
+        <div class="search-box">
+            <i class='bx bx-search'></i>
+            <input type="text" placeholder="Search AlumniConnect">
+        </div>
+    </aside>
+
+</div>
+
+<script type="module" src="script.js"></script>
+
+</body>
+</html>

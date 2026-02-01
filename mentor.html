@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mentorship Requests | AlumniConnect</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+</head>
+<body>
+
+<div class="layout">
+    
+    <header class="sidebar">
+        <div>
+            <div class="nav-link" style="width: 50px; height: 50px; justify-content: center;">
+                 <i class='bx bxs-network-chart' style="font-size: 30px;"></i>
+            </div>
+
+            <nav>
+                <a href="home.html" class="nav-link active">
+                    <i class='bx bxs-home-circle'></i> <span>Home</span>
+                </a>
+                <a href="connect.html" class="nav-link">
+                    <i class='bx bx-search'></i> <span>Connect</span>
+                </a>
+                <a href="mentor.html" class="nav-link">
+                    <i class='bx bx-group'></i> <span>Mentorship</span>
+                </a>
+                <a href="bookmarks.html" class="nav-link">
+                    <i class='bx bx-bookmark'></i> <span>Bookmarks</span>
+                </a>
+                <a href="notifications.html" class="nav-link">
+                    <i class='bx bx-bell'></i> <span>Notifications</span>
+                </a>
+                <a href="profile.html" class="nav-link">
+                    <i class='bx bx-user'></i> <span>Profile</span>
+                </a>
+                <a href="feedback.html" class="nav-link">
+                    <i class='bx bx-message-dots'></i> <span>Feedback</span>
+                </a>
+            </nav>
+
+            <button onclick="window.location.href='home.html'" class="sidebar-post-btn">Post</button>
+        </div>
+        
+        <div id="sidebarUser" class="user-pill">
+            <div class="user-avatar-sm">?</div>
+            <div class="user-meta">
+                <span class="post-name">Loading...</span>
+                <span class="user-handle" style="font-size: 13px;">@...</span>
+            </div>
+        </div>
+    </header>
+
+<main class="main-feed">
+        <div class="feed-header">
+            <span class="feed-title">Mentorship</span>
+        </div>
+
+        <div style="padding: 20px;">
+            
+            <div class="stats-row" style="grid-template-columns: 1fr 1fr;">
+                <div class="stat-card active-tab" id="tab-incoming" onclick="window.switchMentorTab('incoming')">
+                    <div class="stat-number" id="count-incoming">0</div>
+                    <div class="stat-label">Received (Pending)</div>
+                </div>
+
+                <div class="stat-card" id="tab-outgoing" onclick="window.switchMentorTab('outgoing')">
+                    <div class="stat-number" id="count-outgoing">0</div>
+                    <div class="stat-label">Sent (Status)</div>
+                </div>
+            </div>
+
+            <div class="section-title" id="section-title">Received Requests</div>
+
+            <div id="requests-container">
+                <div style="text-align:center; padding:20px; color:#536471;">
+                    <i class='bx bx-loader-alt bx-spin'></i> Loading...
+                </div>
+            </div>
+
+            <div class="empty-state" id="empty-msg" style="display:none;">
+                <i class='bx bx-check-circle' style="font-size: 40px; margin-bottom: 10px;"></i>
+                <h3>No requests found</h3>
+                <p id="empty-text">You are all caught up.</p>
+            </div>
+
+        </div>
+    </main>
+
+    <aside class="right-sidebar">
+        <div class="search-box">
+            <i class='bx bx-search'></i>
+            <input type="text" placeholder="Search">
+        </div>
+    </aside>
+
+</div>
+
+<script type="module" src="script.js"></script>
+</body>
+</html>

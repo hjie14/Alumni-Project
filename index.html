@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Sign in</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="styles.css">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+</head>
+<body class="auth-body">
+
+    <div class="auth-brand">
+        <i class='bx bxs-network-chart'></i>
+        <span>AlumniConnect</span>
+    </div>
+
+    <div class="auth-card">
+        <div class="auth-header">
+            <h1>Sign in</h1>
+            <p>Stay updated on your professional world</p>
+        </div>
+
+        <form id="loginForm" class="form-group">
+            
+            <div class="input-container">
+                <input type="text" id="email" placeholder="Email or phone" required>
+            </div>
+
+            <div class="input-container">
+                <input type="password" id="password" placeholder="Password" required>
+                <button type="button" class="show-btn" id="togglePassword">Show</button>
+            </div>
+
+            <a href="#" class="forgot-password">Forgot password?</a>
+
+            <div class="checkbox-wrapper">
+                <input type="checkbox" id="keepLoggedIn" checked>
+                <label for="keepLoggedIn">Keep me logged in</label>
+            </div>
+
+            <button type="submit" class="auth-submit-btn">Sign in</button>
+        </form>
+    </div>
+
+    <div class="auth-footer">
+        New here? <a href="signup.html">Join now</a>
+    </div>
+
+    <div style="margin-top: 15px; font-size: 14px; text-align: center;">
+        <a href="home.html" style="color: #666; font-weight: 400;">Continue as Guest</a>
+    </div>
+
+    <!-- MAIN SCRIPT -->
+    <script type="module" src="script.js"></script>
+</body>
+</html>

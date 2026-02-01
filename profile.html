@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Profile</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="styles.css">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+</head>
+<body>
+
+<div class="layout">
+    <header class="sidebar">
+        <div>
+            <div class="nav-link" style="width: 50px; height: 50px; justify-content: center;">
+                 <i class='bx bxs-network-chart' style="font-size: 30px;"></i>
+            </div>
+
+            <nav>
+                <a href="home.html" class="nav-link active">
+                    <i class='bx bxs-home-circle'></i> <span>Home</span>
+                </a>
+                <a href="connect.html" class="nav-link">
+                    <i class='bx bx-search'></i> <span>Connect</span>
+                </a>
+                <a href="mentor.html" class="nav-link">
+                    <i class='bx bx-group'></i> <span>Mentorship</span>
+                </a>
+                <a href="bookmarks.html" class="nav-link">
+                    <i class='bx bx-bookmark'></i> <span>Bookmarks</span>
+                </a>
+                <a href="notifications.html" class="nav-link">
+                    <i class='bx bx-bell'></i> <span>Notifications</span>
+                </a>
+                <a href="profile.html" class="nav-link">
+                    <i class='bx bx-user'></i> <span>Profile</span>
+                </a>
+                <a href="feedback.html" class="nav-link">
+                    <i class='bx bx-message-dots'></i> <span>Feedback</span>
+                </a>
+            </nav>
+
+            <button id="sidebarPostBtn" class="sidebar-post-btn">Post</button>
+        </div>
+        <div id="sidebarUser" class="user-pill">
+            <div class="user-avatar-sm">?</div>
+            <div class="user-meta">
+                <span class="post-name">Loading...</span>
+                <span class="user-handle" style="font-size: 13px;">@...</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-feed">
+        <div class="feed-header">
+            <div style="display:flex; align-items:center; gap: 20px;">
+                <i class='bx bx-arrow-back' style="font-size:20px; cursor:pointer;" onclick="history.back()"></i>
+                <div>
+                    <span class="feed-title" id="headerName">Profile</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="profile-banner"></div>
+        
+        <div class="profile-details">
+            <div class="profile-avatar-lg" id="profileAvatar">U</div>
+            
+            <button class="edit-profile-btn" id="editToggleBtn">Edit profile</button>
+            <button class="edit-profile-btn" id="requestMentorBtn" style="display:none;">Request Mentorship</button>
+            
+            <div class="profile-info">
+                <div class="profile-name" id="displayName">Name</div>
+                <div class="profile-handle" id="displayHandle">@handle</div>
+                <div class="profile-bio" id="displayBio">No bio yet.</div>
+                <div id="skillsSection" class="skills-section"></div>
+                <div class="profile-meta">
+                    <div id="metaLocation" style="display:none"><i class='bx bx-map'></i> <span id="txtLocation"></span></div>
+                    <div id="metaEducation" style="display:none"><i class='bx bxs-graduation'></i> <span id="txtEducation"></span></div>
+                    <div id="metaLink" style="display:none"><i class='bx bx-link'></i> <a href="#" id="txtLink" target="_blank">Link</a></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="profile-tabs">
+            <div class="tab-item active" id="tabPosts">Posts</div>
+            <div class="tab-item" id="tabLikes">Liked</div>
+        </div>
+
+        <div id="postsContent">
+            <div id="myPostsContainer">
+                <div style="padding: 20px; text-align: center; color: #536471;">Loading posts...</div>
+            </div>
+        </div>
+
+        <div id="likesContent" style="display: none;">
+            <div id="myLikesContainer">
+                <div style="padding: 20px; text-align: center; color: #536471;">Loading likes...</div>
+            </div>
+        </div>
+    </main>
+
+    <aside class="right-sidebar">
+        <div class="search-box">
+            <i class='bx bx-search'></i>
+            <input type="text" placeholder="Search">
+        </div>
+    </aside>
+</div>
+
+<div id="editProfileModal" class="modal">
+    <div class="modal-content" style="max-width: 500px; border-radius: 16px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h2 style="font-size:20px; margin:0;">Edit Profile</h2>
+            <span class="close-modal" id="closeEditModal">&times;</span>
+        </div>
+        
+        <form id="profileForm">
+            <div class="form-group">
+                <label>Name</label>
+                <input type="text" id="inputName" class="modal-input" disabled style="background: #f7f9f9; cursor: not-allowed;">
+            </div>
+            <div class="form-group">
+                <label>Bio</label>
+                <textarea id="inputBio" rows="3" class="modal-input" placeholder="Tell us about yourself"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Skills <small>(comma separated)</small></label>
+                <input type="text" id="inputSkills" class="modal-input" placeholder="HTML, CSS, JavaScript">
+            </div>
+            <div class="form-group">
+                <label>Education / Major</label>
+                <input type="text" id="inputEducation" class="modal-input" placeholder="Computer Science">
+            </div>
+            <div class="form-group">
+                <label>Location</label>
+                <input type="text" id="inputLocation" class="modal-input" placeholder="City, Country">
+            </div>
+            <div class="form-group">
+                <label>Website / LinkedIn</label>
+                <input type="text" id="inputWebsite" class="modal-input" placeholder="https://...">
+            </div>
+            <div style="text-align: right; margin-top: 20px;">
+                <button type="submit" class="save-profile-btn">Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="requestMentorModal" class="modal">
+    <div class="modal-content" style="max-width: 500px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+            <h2 style="font-size:20px; margin:0;">Request Mentorship</h2>
+            <span class="close-modal" id="closeRequestModal">&times;</span>
+        </div>
+        
+        <p style="color:#536471; margin-bottom: 20px; font-size:15px; line-height:1.5;">
+            Introduce yourself and briefly explain your goals. Why do you want this person as your mentor?
+        </p>
+        
+        <textarea id="requestMessageInput" class="modal-textarea" rows="5" 
+            placeholder="Hi, I'm a Computer Science student interested in..." ></textarea>
+        
+        <div style="display:flex; justify-content:flex-end; gap:10px;">
+            <button id="cancelRequestBtn" class="modal-btn-cancel">Cancel</button>
+            <button id="confirmRequestBtn" class="modal-btn-confirm">Send Request</button>
+        </div>
+    </div>
+</div>
+
+<div id="saveSuccessPopup" class="custom-popup">
+    <div class="popup-content">
+        <div class="popup-icon" style="background:#d1fae5; color:#059669;">
+            <i class='bx bx-check'></i>
+        </div>
+        <h3>Saved!</h3>
+        <p>Your profile has been updated successfully.</p>
+        <button onclick="window.location.reload()">Great</button>
+    </div>
+</div>
+
+<div id="postModal" class="modal">
+    <div class="modal-content">
+        <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+            <span class="close-modal">&times;</span>
+        </div>
+        <div class="composer-container" style="border: none; padding: 0;">
+            <div class="user-avatar-sm current-user-avatar">U</div>
+            <div style="flex: 1;">
+                <textarea id="modalInput" class="composer-textarea" placeholder="What's happening?" rows="3"></textarea>
+                <div class="composer-actions">
+                     <div class="icon-row"><i class='bx bx-image-alt'></i></div>
+                    <button id="modalPostBtn" class="post-submit-btn">Post</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="cancelConfirmModal" class="modal">
+    <div class="modal-content" style="max-width: 400px; text-align: center; padding: 30px; border-radius: 20px;">
+        <div style="margin-bottom: 15px;">
+            <i class='bx bx-error-circle' style="font-size: 50px; color: #dc3545;"></i>
+        </div>
+        
+        <h2 style="font-size: 22px; margin-bottom: 10px; color: #0f1419;">Cancel Request?</h2>
+        
+        <p style="color: #536471; margin-bottom: 25px; font-size: 15px; line-height: 1.5;">
+            Are you sure you want to withdraw this mentorship request? This action cannot be undone.
+        </p>
+        
+        <div style="display: flex; gap: 12px; justify-content: center;">
+            <button id="closeCancelModalBtn" class="modal-btn-cancel" style="flex: 1;">No, Keep it</button>
+            <button id="confirmCancelActionBtn" class="modal-btn-danger" style="flex: 1;">Yes, Cancel</button>
+        </div>
+    </div>
+</div>
+
+<script type="module" src="script.js"></script>
+</body>
+</html>
