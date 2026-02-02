@@ -1305,7 +1305,7 @@ window.updateMentorStatus = async function(id, newStatus, senderId) {
     }
 
 // ==========================================
-    //  FEATURE: NOTIFICATIONS (Redesigned)
+    //  FEATURE: NOTIFICATIONS (Final Fixed Version)
     // ==========================================
     async function setupNotificationsPage() { 
         const container = document.getElementById("notificationsContainer");
@@ -1313,7 +1313,6 @@ window.updateMentorStatus = async function(id, newStatus, senderId) {
 
         container.innerHTML = `<div style="text-align:center; padding:40px; color:#536471;"><i class='bx bx-loader-alt bx-spin' style="font-size:28px;"></i><br>Checking updates...</div>`;
         
-        // Fetch notifications
         const { data: notifs } = await supabase
             .from("notification")
             .select("*")
@@ -1329,7 +1328,6 @@ window.updateMentorStatus = async function(id, newStatus, senderId) {
                         <i class='bx bx-bell-off' style="font-size:30px; color:#9ca3af;"></i>
                     </div>
                     <h3 style="margin:0; font-size:18px; color:#0f1419;">No notifications yet</h3>
-                    <p style="color:#536471; margin-top:5px;">We'll let you know when something important happens.</p>
                 </div>`; 
             return; 
         }
@@ -1341,41 +1339,35 @@ window.updateMentorStatus = async function(id, newStatus, senderId) {
              const msg = n.message; 
              const rawText = typeof msg === 'string' ? msg : (msg.text || "New Notification"); 
              const actionText = (typeof msg === 'object' && msg.action) ? msg.action : '';
-             const isUnread = !n.read_status; // Assuming false means unread
+             const isUnread = !n.read_status; // true if unread
              
-             // --- 1. DETERMINE TYPE & STYLE ---
+             // --- ICON & LINK LOGIC ---
              let typeClass = 'notif-type-general';
              let iconClass = 'bx-bell';
              let targetLink = '#';
              
              const type = (msg.type || "").toLowerCase();
+             if(type.includes('job')) { typeClass = 'notif-type-job'; iconClass = 'bx-briefcase'; targetLink = 'jobpost.html'; }
+             else if(type.includes('event')) { typeClass = 'notif-type-event'; iconClass = 'bx-calendar-event'; targetLink = 'events.html'; }
+             else if(type.includes('mentorship')) { typeClass = 'notif-type-mentor'; iconClass = 'bx-group'; targetLink = 'mentor.html'; }
 
-             if(type.includes('job')) { 
-                 typeClass = 'notif-type-job'; 
-                 iconClass = 'bx-briefcase'; 
-                 targetLink = 'jobpost.html'; 
-             }
-             else if(type.includes('event')) { 
-                 typeClass = 'notif-type-event'; 
-                 iconClass = 'bx-calendar-event'; 
-                 targetLink = 'events.html'; 
-             }
-             else if(type.includes('mentorship')) { 
-                 typeClass = 'notif-type-mentor'; 
-                 iconClass = 'bx-group'; 
-                 targetLink = 'mentor.html'; 
-             }
-
-             // --- 2. CALCULATE TIME AGO ---
-             const timeAgo = getTimeAgo(new Date(n.created_at));
-
-             // --- 3. BUILD HTML ---
+             // --- BUILD CARD ---
              const card = document.createElement('div'); 
-             card.className = `notification-card ${isUnread ? 'unread' : ''}`;
+             // Add 'unread' class if status is false
+             card.className = `notification-card ${isUnread ? 'unread' : 'read'}`;
+             card.id = `notif-${n.id}`;
+
+             // 1. CLICK CARD (View & Mark Read)
              card.onclick = async () => {
-                 // Mark as read in DB (Optional enhancement)
+                 // Visual update immediately
+                 card.classList.remove('unread');
+                 card.classList.add('read');
+
+                 // Update Database
                  await supabase.from('notification').update({ read_status: true }).eq('id', n.id);
-                 window.location.href = targetLink;
+
+                 // Redirect
+                 if(targetLink !== '#') window.location.href = targetLink;
              };
 
              card.innerHTML = `
@@ -1383,14 +1375,33 @@ window.updateMentorStatus = async function(id, newStatus, senderId) {
                     <i class='bx ${iconClass}'></i>
                 </div>
                 <div class="notif-content">
-                    <div class="notif-text">
-                        ${escapeHtml(rawText)}
-                    </div>
+                    <div class="notif-text">${escapeHtml(rawText)}</div>
                     ${actionText ? `<div class="notif-action-link">${escapeHtml(actionText)} <i class='bx bx-chevron-right'></i></div>` : ''}
-                    <div class="notif-time">${timeAgo}</div>
+                    <div class="notif-time">${getTimeAgo(new Date(n.created_at))}</div>
                 </div>
                 ${isUnread ? '<div class="unread-dot"></div>' : ''}
+                
+                <button class="btn-delete-notif" title="Delete Notification">
+                    <i class='bx bx-trash'></i>
+                </button>
              `;
+             
+             // 2. CLICK TRASH (Delete Logic)
+             const deleteBtn = card.querySelector('.btn-delete-notif');
+             if(deleteBtn) {
+                 deleteBtn.onclick = async (e) => {
+                     e.stopPropagation(); // Stop the card click (don't redirect)
+                     
+                     if(!confirm("Delete this notification?")) return;
+
+                     // Visual remove
+                     card.style.opacity = '0';
+                     setTimeout(() => card.remove(), 300);
+
+                     // DB remove
+                     await supabase.from('notification').delete().eq('id', n.id);
+                 };
+             }
              
              listDiv.appendChild(card);
         });
