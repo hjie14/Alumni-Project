@@ -1693,51 +1693,6 @@ function setupAuthForms() {
         }
     };
 
-    // --- FEEDBACK IMPLEMENTATION ---
-async function setupFeedbackSubmission() {
-    const submitBtn = document.getElementById('submitFeedbackBtn');
-    const feedbackInput = document.getElementById('feedbackText');
-
-    if (!submitBtn || !feedbackInput) return;
-
-    submitBtn.onclick = async () => {
-        const messageContent = feedbackInput.value.trim();
-
-        if (!messageContent) {
-            alert("Please enter your feedback message.");
-            return;
-        }
-
-        // currentPublicUser is defined on line 11 of your script
-        if (!currentPublicUser) {
-            alert("Error: User session not found. Please log in again.");
-            return;
-        }
-
-        submitBtn.innerText = "Sending...";
-        submitBtn.disabled = true;
-
-        // Implementation to the database based on your query results
-        const { error } = await supabase.from('feedback').insert([{
-            user_id: currentPublicUser.user_id, // Links to your 'User' table
-            message: messageContent,            // The content to be stored
-            feedback_type: 'General',           // Matches your USER-DEFINED type
-            is_highlighted: 0                   // Default bigint value
-        }]);
-
-        if (error) {
-            console.error("Feedback Save Error:", error.message);
-            alert("Database Error: " + error.message);
-        } else {
-            alert("Feedback successfully stored!");
-            feedbackInput.value = ''; 
-        }
-
-        submitBtn.innerText = "Submit Feedback";
-        submitBtn.disabled = false;
-    };
-}
-
 // ==========================================
     //  GLOBAL: SIDEBAR POST BUTTON LOGIC
     // ==========================================
