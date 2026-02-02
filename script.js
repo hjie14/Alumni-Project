@@ -919,16 +919,30 @@ async function fetchJobs() {
                     reqBtn.style.color = "#f4212e";
                     reqBtn.style.borderColor = "#f4212e";
                     
-                    reqBtn.onclick = async () => {
-                        if(!confirm("Cancel this request?")) return;
-                        reqBtn.innerText = "...";
-                        await supabase.from('mentorship_requests').delete().eq('id', existing.id);
-                        window.location.reload();
+                    // --- NEW: Open Custom Cancel Modal ---
+                    reqBtn.onclick = () => {
+                        const m = document.getElementById('cancelRequestModal');
+                        if(m) {
+                            m.style.display = 'block';
+                            
+                            // Close Button
+                            document.getElementById('closeCancelReqModal').onclick = () => m.style.display = 'none';
+                            
+                            // Confirm Withdraw Button
+                            const yesBtn = document.getElementById('confirmCancelReqBtn');
+                            yesBtn.onclick = null;
+                            yesBtn.onclick = async () => {
+                                yesBtn.innerText = "Withdrawing...";
+                                await supabase.from('mentorship_requests').delete().eq('id', existing.id);
+                                m.style.display = 'none';
+                                window.location.reload(); // Reload to update UI
+                            };
+                        }
                     };
                 }
+                
                 // State C: No Request OR Declined (Allow Requesting)
                 else {
-                    // This handles NULL (never requested) OR 'Declined'
                     reqBtn.innerText = "Request Mentorship";
                     reqBtn.className = "edit-profile-btn";
                     
@@ -939,15 +953,12 @@ async function fetchJobs() {
                         reqError.style.display = 'none';
                     };
 
-                    // SEND REQUEST LOGIC (The Fix)
                     if(closeReqBtn) closeReqBtn.onclick = () => reqModal.style.display = 'none';
                     
                     if(confirmReqBtn) {
-                        confirmReqBtn.onclick = null; // Clear old listeners
+                        confirmReqBtn.onclick = null;
                         confirmReqBtn.onclick = async () => {
                             const msg = reqMsgInput.value.trim();
-                            
-                            // UI Validation
                             if(!msg) { 
                                 reqMsgInput.classList.add('error');
                                 reqError.style.display = 'block';
@@ -960,13 +971,13 @@ async function fetchJobs() {
                             let error = null;
 
                             if (existing) {
-                                // CASE 1: ROW EXISTS (e.g. Declined) -> UPDATE IT
+                                // Update existing row
                                 const { error: upErr } = await supabase.from('mentorship_requests')
                                     .update({ status: 'Pending', message: msg, created_at: new Date() })
                                     .eq('id', existing.id);
                                 error = upErr;
                             } else {
-                                // CASE 2: NEW ROW -> INSERT
+                                // Insert new row
                                 const { error: inErr } = await supabase.from('mentorship_requests').insert([{
                                     sender_id: currentPublicUser.user_id, 
                                     receiver_id: profileUser.user_id, 
@@ -978,15 +989,27 @@ async function fetchJobs() {
 
                             if (!error) {
                                 reqModal.style.display = 'none';
+                                
+                                // Send Notification
                                 await supabase.from("notification").insert([{ 
                                     user_id: profileUser.user_id, 
                                     message: { type: "mentorship_request", text: `${currentPublicUser.name} requested mentorship.`, action: "Check Mentorship Tab" }, 
                                     read_status: false 
                                 }]);
                                 
-                                // Show Success (Reuse your existing success popup or alert)
-                                alert("Request Sent!");
-                                window.location.reload(); // Reload to update button state
+                                // --- NEW: Show Custom Success Modal instead of Alert ---
+                                const successModal = document.getElementById('requestSentModal');
+                                if(successModal) {
+                                    // Optional: Customize text
+                                    const textP = document.getElementById('sentModalText');
+                                    if(textP) textP.innerText = `Your request to @${profileUser.user_name} has been sent successfully.`;
+                                    
+                                    successModal.style.display = 'block';
+                                    // Note: The "Great" button in HTML triggers window.location.reload()
+                                } else {
+                                    window.location.reload();
+                                }
+                                
                             } else { 
                                 alert("Error: " + error.message); 
                                 confirmReqBtn.innerText = "Send Request"; 

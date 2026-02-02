@@ -1659,3 +1659,22 @@ button { cursor: pointer; border: none; outline: none; background: none; }
     border-color: #ef4444;
     background-color: #fef2f2;
 }
+
+/* Specific Red Override for Withdraw Button if needed */
+.btn-withdraw {
+    flex: 1;
+    padding: 14px 0;
+    border-radius: 12px;
+    border: none;
+    background-color: #f4212e; /* Red */
+    color: white;
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(244, 33, 46, 0.25);
+    transition: all 0.2s;
+}
+.btn-withdraw:hover {
+    background-color: #d91e28;
+    transform: translateY(-2px);
+}

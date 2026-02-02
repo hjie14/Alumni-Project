@@ -248,6 +248,39 @@
     </div>
 </div>
 
+<div id="requestSentModal" class="modal" style="backdrop-filter: blur(4px); background-color: rgba(0,0,0,0.4);">
+    <div class="modal-content modern-modal">
+        <div class="modal-icon-bubble send"> <i class='bx bxs-paper-plane'></i>
+        </div>
+        <h2 class="modal-title">Request Sent!</h2>
+        <p class="modal-desc" id="sentModalText">
+            Your mentorship request has been successfully delivered. Good luck!
+        </p>
+        <button onclick="window.location.reload()" class="btn-confirm-send" style="width:100%;">
+            Great
+        </button>
+    </div>
+</div>
+
+<div id="cancelRequestModal" class="modal" style="backdrop-filter: blur(4px); background-color: rgba(0,0,0,0.4);">
+    <div class="modal-content modern-modal">
+        <div class="modal-icon-bubble decline"> <i class='bx bx-x'></i>
+        </div>
+        <h2 class="modal-title">Cancel Request?</h2>
+        <p class="modal-desc">
+            Are you sure you want to withdraw this request? This action cannot be undone.
+        </p>
+        <div class="modal-actions">
+            <button id="closeCancelReqModal" class="btn-cancel">
+                No, Keep it
+            </button>
+            <button id="confirmCancelReqBtn" class="btn-confirm-decline" style="background-color: #f4212e; box-shadow: 0 4px 12px rgba(244, 33, 46, 0.25);">
+                Yes, Withdraw
+            </button>
+        </div>
+    </div>
+</div>
+
 <script type="module" src="script.js"></script>
 </body>
 </html>
