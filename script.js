@@ -1239,40 +1239,113 @@ async function loadMentorTab(mode) {
     }
 
 // ==========================================
-    //  FEATURE: NOTIFICATIONS (Clickable & Smart)
+    //  FEATURE: NOTIFICATIONS (Redesigned)
     // ==========================================
     async function setupNotificationsPage() { 
         const container = document.getElementById("notificationsContainer");
-        container.innerHTML = `<div style="text-align:center; padding:20px; color:#536471;"><i class='bx bx-loader-alt bx-spin' style="font-size:24px;"></i><br>Loading...</div>`;
+        if(!container) return;
+
+        container.innerHTML = `<div style="text-align:center; padding:40px; color:#536471;"><i class='bx bx-loader-alt bx-spin' style="font-size:28px;"></i><br>Checking updates...</div>`;
         
-        const { data: notifs } = await supabase.from("notification").select("*").eq("user_id", currentPublicUser.user_id).order("created_at", {ascending:false});
+        // Fetch notifications
+        const { data: notifs } = await supabase
+            .from("notification")
+            .select("*")
+            .eq("user_id", currentPublicUser.user_id)
+            .order("created_at", {ascending:false});
         
         container.innerHTML = ''; 
-        if(!notifs || notifs.length === 0) { container.innerHTML = '<div style="padding:40px; text-align:center; color:#536471;">No new notifications</div>'; return; }
         
+        if(!notifs || notifs.length === 0) { 
+            container.innerHTML = `
+                <div style="display:flex; flex-direction:column; align-items:center; padding:60px 20px; text-align:center;">
+                    <div style="width:60px; height:60px; background:#f3f4f6; border-radius:50%; display:flex; align-items:center; justify-content:center; margin-bottom:15px;">
+                        <i class='bx bx-bell-off' style="font-size:30px; color:#9ca3af;"></i>
+                    </div>
+                    <h3 style="margin:0; font-size:18px; color:#0f1419;">No notifications yet</h3>
+                    <p style="color:#536471; margin-top:5px;">We'll let you know when something important happens.</p>
+                </div>`; 
+            return; 
+        }
+        
+        const listDiv = document.createElement('div');
+        listDiv.className = 'notification-list';
+
         notifs.forEach(n => {
              const msg = n.message; 
-             const text = typeof msg === 'string' ? msg : (msg.text || "New Notification"); 
-             const subtext = (typeof msg === 'object' && msg.action) ? `<div style="font-weight:bold; color:var(--primary-color); margin-top:5px; font-size:13px;">${msg.action}</div>` : '';
+             const rawText = typeof msg === 'string' ? msg : (msg.text || "New Notification"); 
+             const actionText = (typeof msg === 'object' && msg.action) ? msg.action : '';
+             const isUnread = !n.read_status; // Assuming false means unread
              
-             // Determine Link based on Type
+             // --- 1. DETERMINE TYPE & STYLE ---
+             let typeClass = 'notif-type-general';
+             let iconClass = 'bx-bell';
              let targetLink = '#';
-             let icon = '!';
+             
              const type = (msg.type || "").toLowerCase();
 
-             if(type.includes('job')) { targetLink = 'jobpost.html'; icon = '💼'; }
-             else if(type.includes('event')) { targetLink = 'events.html'; icon = '📅'; }
-             else if(type.includes('mentorship')) { targetLink = 'mentor.html'; icon = '🤝'; }
+             if(type.includes('job')) { 
+                 typeClass = 'notif-type-job'; 
+                 iconClass = 'bx-briefcase'; 
+                 targetLink = 'jobpost.html'; 
+             }
+             else if(type.includes('event')) { 
+                 typeClass = 'notif-type-event'; 
+                 iconClass = 'bx-calendar-event'; 
+                 targetLink = 'events.html'; 
+             }
+             else if(type.includes('mentorship')) { 
+                 typeClass = 'notif-type-mentor'; 
+                 iconClass = 'bx-group'; 
+                 targetLink = 'mentor.html'; 
+             }
 
-             const el = document.createElement('div'); 
-             el.className = 'notification-item'; 
-             // Add Cursor Pointer & Click Event
-             el.style.cursor = "pointer";
-             el.onclick = () => window.location.href = targetLink;
+             // --- 2. CALCULATE TIME AGO ---
+             const timeAgo = getTimeAgo(new Date(n.created_at));
 
-             el.innerHTML = `<div class="user-avatar-sm" style="background:#0f1419; color:white;">${icon}</div><div><div>${escapeHtml(text)}</div>${subtext}</div>`; 
-             container.appendChild(el);
+             // --- 3. BUILD HTML ---
+             const card = document.createElement('div'); 
+             card.className = `notification-card ${isUnread ? 'unread' : ''}`;
+             card.onclick = async () => {
+                 // Mark as read in DB (Optional enhancement)
+                 await supabase.from('notification').update({ read_status: true }).eq('id', n.id);
+                 window.location.href = targetLink;
+             };
+
+             card.innerHTML = `
+                <div class="notif-icon-box ${typeClass}">
+                    <i class='bx ${iconClass}'></i>
+                </div>
+                <div class="notif-content">
+                    <div class="notif-text">
+                        ${escapeHtml(rawText)}
+                    </div>
+                    ${actionText ? `<div class="notif-action-link">${escapeHtml(actionText)} <i class='bx bx-chevron-right'></i></div>` : ''}
+                    <div class="notif-time">${timeAgo}</div>
+                </div>
+                ${isUnread ? '<div class="unread-dot"></div>' : ''}
+             `;
+             
+             listDiv.appendChild(card);
         });
+
+        container.appendChild(listDiv);
+    }
+
+    // Helper: Time Ago (e.g., "5m ago")
+    function getTimeAgo(date) {
+        const seconds = Math.floor((new Date() - date) / 1000);
+        let interval = seconds / 31536000;
+        if (interval > 1) return Math.floor(interval) + "y ago";
+        interval = seconds / 2592000;
+        if (interval > 1) return Math.floor(interval) + "mo ago";
+        interval = seconds / 86400;
+        if (interval > 1) return Math.floor(interval) + "d ago";
+        interval = seconds / 3600;
+        if (interval > 1) return Math.floor(interval) + "h ago";
+        interval = seconds / 60;
+        if (interval > 1) return Math.floor(interval) + "m ago";
+        return "Just now";
     }
 
     function setupBookmarksPage() {
@@ -1421,26 +1494,46 @@ function setupAuthForms() {
 };
 
 // ==========================================
-    //  HELPER: Broadcast Notification to ALL Users
+    //  HELPER: Broadcast Notification (Debug Version)
     // ==========================================
     async function broadcastNotificationToAll(type, text, actionLabel) {
-        // 1. Fetch all users EXCEPT the current user (don't notify yourself)
-        const { data: users } = await supabase.from('User').select('user_id').neq('user_id', currentPublicUser.user_id);
+        console.log("🚀 Starting Broadcast...");
+
+        // 1. Fetch all users EXCEPT the current user
+        const { data: users, error } = await supabase
+            .from('User')
+            .select('user_id')
+            .neq('user_id', currentPublicUser.user_id);
         
+        if (error) {
+            console.error("❌ Error fetching users:", error.message);
+            return;
+        }
+
+        console.log(`👥 Found ${users.length} other users to notify.`);
+
         if (users && users.length > 0) {
-            // 2. Prepare a notification for everyone
+            // 2. Prepare notifications
             const notifications = users.map(u => ({
                 user_id: u.user_id,
                 message: { 
-                    type: type,       // 'new_job' or 'new_event'
+                    type: type, 
                     text: text, 
                     action: actionLabel 
                 },
                 read_status: false
             }));
 
-            // 3. Bulk Insert
-            await supabase.from('notification').insert(notifications);
+            // 3. Insert
+            const { error: insertError } = await supabase.from('notification').insert(notifications);
+            
+            if (insertError) {
+                console.error("❌ Error sending notifications:", insertError.message);
+            } else {
+                console.log("✅ Notifications sent successfully!");
+            }
+        } else {
+            console.warn("⚠️ No other users found. Create a second account to test!");
         }
     }
 });

@@ -1249,3 +1249,87 @@ button { cursor: pointer; border: none; outline: none; background: none; }
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
+
+/* =============================
+   MODERN NOTIFICATIONS DESIGN
+   ============================= */
+
+.notification-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0; /* No gap, we use border-bottom */
+}
+
+.notification-card {
+    display: flex;
+    align-items: flex-start;
+    padding: 20px;
+    background: white;
+    border-bottom: 1px solid #eff3f4;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.notification-card:hover {
+    background-color: #f7f9f9;
+}
+
+.notification-card.unread {
+    background-color: #f0f9ff; /* Very light blue for unread */
+}
+
+/* Icon Styling */
+.notif-icon-box {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    flex-shrink: 0;
+    margin-right: 16px;
+}
+
+/* Type Variants */
+.notif-type-job { background-color: #e0f2fe; color: #0284c7; } /* Blue */
+.notif-type-event { background-color: #f3e8ff; color: #9333ea; } /* Purple */
+.notif-type-mentor { background-color: #dcfce7; color: #16a34a; } /* Green */
+.notif-type-general { background-color: #f3f4f6; color: #4b5563; } /* Grey */
+
+/* Content Layout */
+.notif-content {
+    flex: 1;
+}
+
+.notif-text {
+    font-size: 15px;
+    color: #0f1419;
+    line-height: 1.4;
+    margin-bottom: 4px;
+}
+
+.notif-action-link {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1d9bf0; /* Twitter Blue */
+    margin-top: 4px;
+    display: inline-block;
+}
+
+.notif-time {
+    font-size: 13px;
+    color: #536471;
+}
+
+/* Unread Dot */
+.unread-dot {
+    width: 8px;
+    height: 8px;
+    background-color: #1d9bf0;
+    border-radius: 50%;
+    position: absolute;
+    top: 24px;
+    right: 20px;
+}
