@@ -20,13 +20,10 @@
                 <a href="connect.html" class="nav-link"><i class='bx bx-search'></i> <span>Connect</span></a>
                 <a href="mentor.html" class="nav-link"><i class='bx bx-group'></i> <span>Mentorship</span></a>
                 <a href="notifications.html" class="nav-link"><i class='bx bx-bell'></i> <span>Notifications</span></a>
-                <a href="jobpost.html" class="nav-link active"><i class='bx bx-briefcase'></i> <span>Jobs</span></a>
-                <a href="events.html" class="nav-link"><i class='bx bx-calendar-event'></i> <span>Events</span></a>
+                <a href="jobpost.html" class="nav-link"><i class='bx bx-briefcase'></i> <span>Jobs</span></a>
+                <a href="event.html" class="nav-link"><i class='bx bx-calendar-event'></i> <span>Events</span></a>
                 <a href="bookmarks.html" class="nav-link"><i class='bx bx-bookmark'></i> <span>Bookmarks</span></a>
-                <a href="profile.html" class="nav-link"><i class='bx bx-user'></i> <span>Profile</span></a>
-                <a href="feedback.html" class="nav-link">
-                <i class='bx bx-message-dots'></i> <span>Feedback</span>
-                </a>
+                <a href="profile.html" class="nav-link active"><i class='bx bx-user'></i> <span>Profile</span></a>
             </nav>
             <button id="sidebarPostBtn" class="sidebar-post-btn">Post</button>
         </div>
@@ -152,9 +149,65 @@
     </div>
 </div>
 
-<div id="requestMentorModal" class="modal"><div class="modal-content"><span class="close-modal" id="closeRequestModal">&times;</span><textarea id="requestMessageInput" class="modal-textarea"></textarea><button id="confirmRequestBtn">Send</button><button id="cancelRequestBtn">Cancel</button></div></div>
-<div id="cancelConfirmModal" class="modal"><div class="modal-content"><button id="confirmCancelActionBtn">Yes</button><button id="closeCancelModalBtn">No</button></div></div>
-<div id="saveSuccessPopup" class="custom-popup"><div class="popup-content"><h3>Saved!</h3><p>Success.</p></div></div>
+<div id="requestMentorModal" class="modal">
+    <div class="modal-content" style="max-width: 480px; border-radius: 20px; padding: 24px; box-shadow: 0 15px 40px rgba(0,0,0,0.15);">
+        
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <h2 style="font-size:22px; font-weight: 800; margin:0; color:#0f1419;">Request Mentorship</h2>
+            <div class="close-modal" id="closeRequestModal" style="font-size: 24px; cursor: pointer; color: #536471; padding: 5px;">&times;</div>
+        </div>
+        
+        <p style="font-size:15px; color:#536471; margin-bottom:20px; line-height: 1.5;">
+            Introduce yourself and explain why you'd like to connect. A personal message increases your chances of acceptance.
+        </p>
+
+        <div style="background: #f7f9f9; padding: 10px; border-radius: 12px; border: 1px solid #eff3f4;">
+            <textarea id="requestMessageInput" rows="5" class="modal-input" 
+                style="background: transparent; border: none; width: 100%; outline: none; font-family: inherit; font-size: 15px; resize: none;" 
+                placeholder="Hi, I'm a student interested in your field..."></textarea>
+        </div>
+        
+        <div style="margin-top: 25px;">
+            <button id="confirmRequestBtn" class="save-profile-btn" 
+                style="width: 100%; padding: 12px; font-size: 16px; font-weight: 700; border-radius: 50px; background-color: #0f1419; color: white; border: none; cursor: pointer; transition: 0.2s;">
+                Send Request
+            </button>
+        </div>
+
+    </div>
+</div>
+
+<div id="cancelConfirmModal" class="modal">
+    <div class="modal-content" style="max-width: 320px; border-radius: 24px; padding: 32px 24px; text-align: center; box-shadow: 0 15px 40px rgba(0,0,0,0.15);">
+        
+        <h2 style="font-size:20px; font-weight: 800; margin: 0 0 8px 0; color:#0f1419;">Cancel Request?</h2>
+        <p style="font-size:15px; color:#536471; margin: 0 0 24px 0; line-height: 1.4;">
+            Are you sure you want to withdraw your mentorship request?
+        </p>
+        
+        <div style="display: flex; gap: 12px; width: 100%;">
+            <button id="closeCancelModalBtn" 
+                style="flex: 1; padding: 12px 0; border-radius: 50px; border: 1px solid #cfd9de; background: white; color: #0f1419; font-weight: 700; font-size: 15px; cursor: pointer; transition: 0.2s;">
+                No, Keep it
+            </button>
+            
+            <button id="confirmCancelActionBtn" 
+                style="flex: 1; padding: 12px 0; border-radius: 50px; border: none; background: #f4212e; color: white; font-weight: 700; font-size: 15px; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 10px rgba(244, 33, 46, 0.2);">
+                Yes, Cancel
+            </button>
+        </div>
+
+    </div>
+</div>
+
+<div id="saveSuccessPopup" class="custom-popup">
+    <div class="popup-content">
+        <div class="popup-icon" style="background:#d1fae5; color:#059669;"><i class='bx bx-check'></i></div>
+        <h3>Success!</h3>
+        <p>Your changes have been saved.</p>
+        <button onclick="document.getElementById('saveSuccessPopup').classList.remove('show')">Great</button>
+    </div>
+</div>
 
 <script type="module" src="script.js"></script>
 </body>

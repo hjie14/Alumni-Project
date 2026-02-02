@@ -1052,22 +1052,47 @@ async function fetchLikedPosts(targetUserId) {
     }
 
 // ==========================================
-    //  FEATURE: SIDEBAR USER (Updated)
+    //  FEATURE: SIDEBAR USER (UI Fix)
     // ==========================================
     function setupCommonUI() {
         const sidebarUser = document.getElementById('sidebarUser');
         if (currentPublicUser && sidebarUser) {
+            
+            // Get the Avatar HTML
             const avatarHTML = getAvatarHTML(currentPublicUser);
             
-            sidebarUser.innerHTML = `<div style="width:40px; height:40px;">${avatarHTML}</div><div class="user-meta" style="display:flex; flex-direction:column; margin-left:10px;"><span style="font-weight:700;">${escapeHtml(currentPublicUser.name)}</span><span style="color:#536471; font-size:13px;">@${escapeHtml(currentPublicUser.user_name)}</span></div>`;
+            // We inject it into a wrapper div to ensure sizing is perfect
+            sidebarUser.innerHTML = `
+                <div style="width:40px; height:40px; flex-shrink:0;">
+                    ${avatarHTML}
+                </div>
+                <div class="user-meta" style="display:flex; flex-direction:column; margin-left:10px; overflow:hidden;">
+                    <span style="font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                        ${escapeHtml(currentPublicUser.name)}
+                    </span>
+                    <span style="color:#536471; font-size:13px;">
+                        @${escapeHtml(currentPublicUser.user_name)}
+                    </span>
+                </div>`;
             
+            // Popup Menu Logic
             let menu = document.getElementById('userPopupMenu');
-            if(!menu) { menu = document.createElement('div'); menu.className = 'user-popup-menu'; menu.id = 'userPopupMenu'; sidebarUser.parentNode.appendChild(menu); }
+            if(!menu) { 
+                menu = document.createElement('div'); 
+                menu.className = 'user-popup-menu'; 
+                menu.id = 'userPopupMenu'; 
+                sidebarUser.parentNode.appendChild(menu); 
+            }
             menu.innerHTML = `<div class="menu-item" id="logoutTrigger">Log out @${escapeHtml(currentPublicUser.user_name)}</div>`;
+            
             sidebarUser.onclick = (e) => { e.stopPropagation(); menu.classList.toggle('show'); };
             window.onclick = () => { if(menu) menu.classList.remove('show'); };
+            
             const logoutBtn = document.getElementById('logoutTrigger');
-            if(logoutBtn) logoutBtn.onclick = async () => { await supabase.auth.signOut(); window.location.href = 'index.html'; };
+            if(logoutBtn) logoutBtn.onclick = async () => { 
+                await supabase.auth.signOut(); 
+                window.location.href = 'index.html'; 
+            };
         }
     }
 
