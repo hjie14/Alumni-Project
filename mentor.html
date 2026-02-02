@@ -20,9 +20,9 @@
             <nav>
                 <a href="home.html" class="nav-link"><i class='bx bxs-home-circle'></i> <span>Home</span></a>
                 <a href="connect.html" class="nav-link"><i class='bx bx-search'></i> <span>Connect</span></a>
-                <a href="mentor.html" class="nav-link"><i class='bx bx-group'></i> <span>Mentorship</span></a>
+                <a href="mentor.html" class="nav-link active"><i class='bx bx-group'></i> <span>Mentorship</span></a>
                 <a href="notifications.html" class="nav-link"><i class='bx bx-bell'></i> <span>Notifications</span></a>
-                <a href="jobpost.html" class="nav-link active"><i class='bx bx-briefcase'></i> <span>Jobs</span></a>
+                <a href="jobpost.html" class="nav-link"><i class='bx bx-briefcase'></i> <span>Jobs</span></a>
                 <a href="events.html" class="nav-link"><i class='bx bx-calendar-event'></i> <span>Events</span></a>
                 <a href="bookmarks.html" class="nav-link"><i class='bx bx-bookmark'></i> <span>Bookmarks</span></a>
                 <a href="profile.html" class="nav-link"><i class='bx bx-user'></i> <span>Profile</span></a>
@@ -43,23 +43,30 @@
         </div>
     </header>
 
-<main class="main-feed">
+    <main class="main-feed">
         <div class="feed-header">
             <span class="feed-title">Mentorship</span>
         </div>
 
         <div style="padding: 20px;">
             
-            <div class="stats-row" style="grid-template-columns: 1fr 1fr;">
+            <div class="stats-row" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                
                 <div class="stat-card active-tab" id="tab-incoming" onclick="window.switchMentorTab('incoming')">
-                    <div class="stat-number" id="count-incoming">0</div>
-                    <div class="stat-label">Received (Pending)</div>
+                    <div class="stat-number" id="count-incoming">-</div>
+                    <div class="stat-label">Received</div>
                 </div>
 
                 <div class="stat-card" id="tab-outgoing" onclick="window.switchMentorTab('outgoing')">
-                    <div class="stat-number" id="count-outgoing">0</div>
-                    <div class="stat-label">Sent (Status)</div>
+                    <div class="stat-number" id="count-outgoing">-</div>
+                    <div class="stat-label">Sent</div>
                 </div>
+
+                <div class="stat-card" id="tab-accepted" onclick="window.switchMentorTab('accepted')">
+                    <div class="stat-number" id="count-accepted">-</div>
+                    <div class="stat-label">Accepted</div>
+                </div>
+
             </div>
 
             <div class="section-title" id="section-title">Received Requests</div>
@@ -84,6 +91,7 @@
             <i class='bx bx-search'></i>
             <input type="text" placeholder="Search">
         </div>
+        <div id="sidebarSearchResults" class="search-results-dropdown"></div>
     </aside>
 
 </div>

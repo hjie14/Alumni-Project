@@ -941,8 +941,8 @@ async function fetchLikedPosts(targetUserId) {
         renderPosts(posts, container);
     }
 
-    // ==========================================
-    //  FEATURE: MENTOR DASHBOARD
+// ==========================================
+    //  FEATURE: MENTOR DASHBOARD (Updated)
     // ==========================================
     let currentMentorTab = 'incoming'; 
 
@@ -952,75 +952,200 @@ async function fetchLikedPosts(targetUserId) {
         window.switchMentorTab('incoming');
     }
 
+    // Updated to handle 3 tabs
     window.switchMentorTab = function(tabName) {
         currentMentorTab = tabName;
+        
+        // Update UI Tabs
         document.querySelectorAll('.stat-card').forEach(el => el.classList.remove('active-tab'));
         const activeTab = document.getElementById(`tab-${tabName}`);
         if(activeTab) activeTab.classList.add('active-tab');
-        const titles = { 'incoming': 'Received Requests', 'outgoing': 'Sent Requests' };
-        document.getElementById('section-title').innerText = titles[tabName];
+        
+        // Update Title
+        const titles = { 
+            'incoming': 'Received Requests (Pending)', 
+            'outgoing': 'Sent Requests',
+            'accepted': 'Active Mentorships' 
+        };
+        const titleEl = document.getElementById('section-title');
+        if(titleEl) titleEl.innerText = titles[tabName];
+
         loadMentorTab(tabName);
     }
 
+    // Helper to jump from Sent -> Accepted
+    window.jumpToAccepted = function(reqId) {
+        window.switchMentorTab('accepted');
+        // Wait slightly for render, then scroll
+        setTimeout(() => {
+            const card = document.getElementById(`card-${reqId}`);
+            if(card) {
+                card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                card.style.border = "2px solid #1d9bf0"; // Highlight effect
+                setTimeout(() => card.style.border = "1px solid #eff3f4", 2000);
+            }
+        }, 600);
+    }
+
     async function updateAllMentorCounts() {
+        // Incoming (Pending only)
         const { count: incoming } = await supabase.from('mentorship_requests').select('*', { count: 'exact', head: true }).eq('receiver_id', currentPublicUser.user_id).eq('status', 'Pending');
         const incEl = document.getElementById('count-incoming'); if(incEl) incEl.innerText = incoming || 0;
+
+        // Outgoing (All)
         const { count: outgoing } = await supabase.from('mentorship_requests').select('*', { count: 'exact', head: true }).eq('sender_id', currentPublicUser.user_id);
         const outEl = document.getElementById('count-outgoing'); if(outEl) outEl.innerText = outgoing || 0;
+
+        // Accepted (As Sender OR Receiver)
+        const { count: accepted } = await supabase.from('mentorship_requests').select('*', { count: 'exact', head: true }).eq('status', 'Accepted').or(`sender_id.eq.${currentPublicUser.user_id},receiver_id.eq.${currentPublicUser.user_id}`);
+        const accEl = document.getElementById('count-accepted'); if(accEl) accEl.innerText = accepted || 0;
     }
 
     async function loadMentorTab(mode) {
         const container = document.getElementById('requests-container');
         const emptyMsg = document.getElementById('empty-msg');
         if(!container) return;
+        
         container.innerHTML = `<div style="text-align:center; padding:20px; color:#536471;"><i class='bx bx-loader-alt bx-spin'></i> Loading...</div>`;
         if(emptyMsg) emptyMsg.style.display = 'none';
 
-        let query = supabase.from('mentorship_requests').select(`id, created_at, message, status, sender_email_shared, receiver_email_shared, sender:sender_id ( user_id, name, user_name, email ), receiver:receiver_id ( user_id, name, user_name, email )`).order('created_at', { ascending: false });
+        let query = supabase.from('mentorship_requests').select(`
+            id, created_at, message, status, sender_email_shared, receiver_email_shared,
+            sender:sender_id ( user_id, name, user_name, email, user_profile(avatar_url) ), 
+            receiver:receiver_id ( user_id, name, user_name, email, user_profile(avatar_url) )
+        `).order('created_at', { ascending: false });
 
-        if (mode === 'incoming') query = query.eq('receiver_id', currentPublicUser.user_id).eq('status', 'Pending');
-        else if (mode === 'outgoing') query = query.eq('sender_id', currentPublicUser.user_id);
+        // --- FILTER LOGIC ---
+        if (mode === 'incoming') {
+            query = query.eq('receiver_id', currentPublicUser.user_id).eq('status', 'Pending');
+        } 
+        else if (mode === 'outgoing') {
+            query = query.eq('sender_id', currentPublicUser.user_id);
+        }
+        else if (mode === 'accepted') {
+            // Show requests where I am sender OR receiver, AND status is Accepted
+            query = query.eq('status', 'Accepted').or(`sender_id.eq.${currentPublicUser.user_id},receiver_id.eq.${currentPublicUser.user_id}`);
+        }
 
         const { data, error } = await query;
         if (error) { container.innerHTML = 'Error loading data.'; return; }
+        
         container.innerHTML = '';
-        if (!data || data.length === 0) { if(emptyMsg) { emptyMsg.style.display = 'block'; document.getElementById('empty-text').innerText = mode === 'incoming' ? "No pending requests." : "You haven't sent any requests."; } return; }
+        if (!data || data.length === 0) { 
+            if(emptyMsg) { 
+                emptyMsg.style.display = 'block'; 
+                let msg = "";
+                if(mode === 'incoming') msg = "No pending requests.";
+                else if(mode === 'outgoing') msg = "You haven't sent any requests.";
+                else msg = "No active mentorships yet.";
+                document.getElementById('empty-text').innerText = msg;
+            } 
+            return; 
+        }
 
+        // --- RENDER LOGIC ---
         data.forEach(req => {
             const isSender = req.sender.user_id === currentPublicUser.user_id;
-            const otherUser = isSender ? req.receiver : req.sender;
+            // If I am sender, show Receiver info. If I am receiver, show Sender info.
+            const otherUser = isSender ? req.receiver : req.sender; 
+            
+            const avatarHTML = getAvatarHTML(otherUser);
             let actionArea = '';
 
+            // 1. INCOMING TAB (Pending)
             if (mode === 'incoming') {
-                actionArea = `<div class="action-buttons"><button class="btn-action btn-accept" onclick="window.updateMentorStatus(${req.id}, 'Accepted', '${otherUser.user_id}')">Accept</button><button class="btn-action btn-decline" onclick="window.updateMentorStatus(${req.id}, 'Declined', null)">Decline</button></div>`;
-            } else if (mode === 'outgoing') {
+                actionArea = `
+                    <div class="action-buttons">
+                        <button class="btn-action btn-accept" onclick="window.updateMentorStatus(${req.id}, 'Accepted', '${otherUser.user_id}')">Accept</button>
+                        <button class="btn-action btn-decline" onclick="window.updateMentorStatus(${req.id}, 'Declined', null)">Decline</button>
+                    </div>`;
+            } 
+            // 2. OUTGOING TAB (Status List)
+            else if (mode === 'outgoing') {
                 let statusBadge = '';
-                if(req.status === 'Pending') statusBadge = `<span style="color:#d97706; font-weight:bold;">Pending</span>`;
-                else if(req.status === 'Declined') statusBadge = `<span style="color:#dc3545; font-weight:bold;">Declined</span>`;
-                else if(req.status === 'Accepted') {
-                    statusBadge = `<span style="color:#059669; font-weight:bold;">Accepted</span>`;
-                    let shareBtn = req.sender_email_shared ? `<div style="color:#059669; font-size:12px; margin-top:5px;">Email shared</div>` : `<button class="btn-action" style="background:#0f1419; color:white; margin-top:5px; width:auto; font-size:12px;" onclick="window.shareMentorEmail(${req.id}, '${otherUser.user_id}')">Share Email</button>`;
-                    let viewEmail = req.receiver_email_shared ? `<div style="margin-top:5px; font-weight:bold;">${escapeHtml(otherUser.email)}</div>` : `<div style="margin-top:5px; font-size:12px; color:#536471;">Waiting for email...</div>`;
-                    statusBadge += `<div>${shareBtn}${viewEmail}</div>`;
+                if(req.status === 'Pending') {
+                    statusBadge = `<span style="color:#d97706; font-weight:bold; background:#fef3c7; padding:4px 8px; border-radius:4px;">Pending</span>`;
                 }
-                actionArea = `<div style="margin-top:15px;">${statusBadge}</div>`;
+                else if(req.status === 'Declined') {
+                    statusBadge = `<span style="color:#dc3545; font-weight:bold; background:#fee2e2; padding:4px 8px; border-radius:4px;">Declined</span>`;
+                }
+                else if(req.status === 'Accepted') {
+                    // Clickable Badge to jump to Accepted Tab
+                    statusBadge = `
+                        <button onclick="window.jumpToAccepted(${req.id})" 
+                            style="background:#d1fae5; color:#059669; border:none; padding:6px 12px; border-radius:20px; font-weight:bold; cursor:pointer;">
+                            Accepted <i class='bx bx-right-arrow-alt'></i> View
+                        </button>`;
+                }
+                actionArea = `<div style="margin-top:10px;">${statusBadge}</div>`;
+            } 
+            // 3. ACCEPTED TAB (Active Connections)
+            else if (mode === 'accepted') {
+                // Determine which email to show
+                const emailToShow = isSender ? req.receiver.email : req.sender.email;
+                
+                actionArea = `
+                    <div style="margin-top:10px; background:#f7f9f9; padding:10px; border-radius:8px; border:1px solid #eff3f4;">
+                        <div style="font-size:12px; color:#536471; font-weight:bold; text-transform:uppercase;">Contact Info</div>
+                        <div style="font-weight:bold; color:#0f1419; margin-top:2px;">
+                            <i class='bx bx-envelope'></i> ${escapeHtml(emailToShow)}
+                        </div>
+                        <div style="font-size:13px; color:#059669; margin-top:5px;">
+                            <i class='bx bx-check-circle'></i> Mentorship Active
+                        </div>
+                    </div>
+                `;
             }
-            container.innerHTML += `<div class="request-card" id="card-${req.id}"><div style="display:flex; gap:12px; align-items:flex-start;"><div class="user-avatar-sm" style="background-color:#0f1419; color:white;">${otherUser.name.charAt(0).toUpperCase()}</div><div style="flex:1;"><div class="meta-info">@${escapeHtml(otherUser.user_name)}</div><h3 style="font-size:16px; margin-bottom:5px;">${escapeHtml(otherUser.name)}</h3><p>"${escapeHtml(req.message)}"</p>${actionArea}</div></div></div>`;
+
+            container.innerHTML += `
+                <div class="request-card" id="card-${req.id}">
+                    <div style="display:flex; gap:12px; align-items:flex-start;">
+                        <div style="width:40px;">${avatarHTML}</div>
+                        <div style="flex:1;">
+                            <div class="meta-info">@${escapeHtml(otherUser.user_name)}</div>
+                            <h3 style="font-size:16px; margin-bottom:5px;">${escapeHtml(otherUser.name)}</h3>
+                            <p style="font-size:14px; color:#536471; margin-bottom:10px;">"${escapeHtml(req.message)}"</p>
+                            ${actionArea}
+                        </div>
+                    </div>
+                </div>`;
         });
     }
 
+    // AUTOMATED ACCEPT LOGIC
     window.updateMentorStatus = async function(id, newStatus, senderId) {
         if(!confirm(`Are you sure you want to ${newStatus}?`)) return;
-        const { error } = await supabase.from('mentorship_requests').update({ status: newStatus }).eq('id', id);
-        if (error) alert("Error"); 
-        else { document.getElementById(`card-${id}`).remove(); if(newStatus === 'Accepted' && senderId) await supabase.from("notification").insert([{ user_id: senderId, message: { type: "mentorship_update", text: `Request Accepted!`, action: "Check Mentorship" }, read_status: false }]); updateAllMentorCounts(); loadMentorTab(currentMentorTab); }
-    };
+        
+        // If Accepting, automatically set BOTH emails to shared
+        const updateData = { status: newStatus };
+        if (newStatus === 'Accepted') {
+            updateData.sender_email_shared = true;
+            updateData.receiver_email_shared = true;
+        }
 
-    window.shareMentorEmail = async function(reqId, targetUserId) {
-        const { data: req } = await supabase.from('mentorship_requests').select('sender_id').eq('id', reqId).single();
-        let updatePayload = req.sender_id === currentPublicUser.user_id ? { sender_email_shared: true } : { receiver_email_shared: true };
-        const { error } = await supabase.from('mentorship_requests').update(updatePayload).eq('id', reqId);
-        if (error) alert("Error sharing email."); else { alert("Email Shared"); loadMentorTab('outgoing'); }
+        const { error } = await supabase.from('mentorship_requests').update(updateData).eq('id', id);
+        
+        if (error) {
+            alert("Error updating status.");
+        } else {
+            document.getElementById(`card-${id}`).remove();
+            
+            // Notification Logic
+            if(newStatus === 'Accepted' && senderId) {
+                await supabase.from("notification").insert([{ 
+                    user_id: senderId, 
+                    message: { 
+                        type: "mentorship_update", 
+                        text: `Request Accepted! Check the Accepted tab.`, 
+                        action: "View Mentorship" 
+                    }, 
+                    read_status: false 
+                }]);
+            }
+            
+            updateAllMentorCounts();
+            loadMentorTab(currentMentorTab); // Refresh current view
+        }
     };
 
 // ==========================================
