@@ -9,19 +9,36 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     console.log("🚀 App initializing on path:", path);
 
-    // --- 1. AUTH & USER LOADING ---
+// --- 1. AUTH & USER LOADING (Fixed) ---
     const { data: { session } } = await supabase.auth.getSession();
     currentUserAuth = session?.user || null;
 
     if (currentUserAuth) {
+        // FETCH USER + FULL PROFILE (Grabbing everything is safer)
         const { data: userData } = await supabase
             .from('User')
-            .select('*')
+            .select('*, user_profile(*)') 
             .eq('auth_id', currentUserAuth.id)
             .maybeSingle(); 
 
         if (userData) {
             currentPublicUser = userData;
+            
+            // ROBUST FLATTENING LOGIC
+            // Checks if user_profile is an object OR an array (Supabase can return either)
+            let profileData = null;
+            if (userData.user_profile) {
+                if (Array.isArray(userData.user_profile) && userData.user_profile.length > 0) {
+                    profileData = userData.user_profile[0];
+                } else if (typeof userData.user_profile === 'object') {
+                    profileData = userData.user_profile;
+                }
+            }
+
+            // If we found profile data, attach the avatar_url to the main user object
+            if (profileData && profileData.avatar_url) {
+                currentPublicUser.avatar_url = profileData.avatar_url;
+            }
         }
     }
 
