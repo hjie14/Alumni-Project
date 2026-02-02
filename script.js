@@ -806,7 +806,7 @@ async function fetchJobs() {
     }
 
 // ==========================================
-    //  FEATURE: PROFILE PAGE
+    //  FEATURE: PROFILE PAGE (Updated with Fix)
     // ==========================================
     async function setupProfilePage() {
         if (!currentPublicUser) { window.location.href = 'index.html'; return; }
@@ -816,13 +816,14 @@ async function fetchJobs() {
         let profileUser = currentPublicUser;
         let isMe = true;
 
+        // 1. Determine who we are looking at
         if (targetId && targetId != currentPublicUser.user_id) {
             isMe = false;
             const { data: u } = await supabase.from('User').select('*').eq('user_id', targetId).single();
             if(u) profileUser = u;
         }
 
-        // Fetch Profile Data (Bio, Skills, etc)
+        // 2. Render Profile Header (Bio, Name, etc) - Keep your existing code for this part
         const { data: pDataRaw } = await supabase.from('user_profile').select('*').eq('user_id', profileUser.user_id).maybeSingle();
         const pData = pDataRaw || {};
 
@@ -840,8 +841,8 @@ async function fetchJobs() {
         if(pData.skills_text) {
             pData.skills_text.split(',').forEach(s => { if(s.trim()) skillsContainer.innerHTML += `<span class="skill-tag">${escapeHtml(s.trim())}</span>`; });
         }
-
-        // Render Images
+        
+        // Render Avatar/Banner
         const avatarContainer = document.getElementById('profileAvatarContainer');
         const avatarText = document.getElementById('profileAvatarText');
         const avatarImg = document.getElementById('profileAvatarImg');
@@ -860,196 +861,146 @@ async function fetchJobs() {
             avatarContainer.style.backgroundColor = '#0f1419';
             avatarContainer.style.color = 'white';
         }
-
         if(pData.banner_url) bannerDiv.style.backgroundImage = `url('${pData.banner_url}')`;
 
-        // Buttons & Modals
+        // 3. BUTTON LOGIC (Edit vs Request)
         const editBtn = document.getElementById('editToggleBtn');
         const reqBtn = document.getElementById('requestMentorBtn');
+        
+        // Modals
         const editModal = document.getElementById('editProfileModal');
-        const reqModal = document.getElementById('requestMentorModal');
-        const cancelConfirmModal = document.getElementById('cancelConfirmModal');
-        const confirmCancelActionBtn = document.getElementById('confirmCancelActionBtn');
-        const closeCancelModalBtn = document.getElementById('closeCancelModalBtn');
+        const reqModal = document.getElementById('requestMentorModal'); // New Modal ID
         const reqMsgInput = document.getElementById('requestMessageInput');
         const confirmReqBtn = document.getElementById('confirmRequestBtn');
-        const cancelReqBtn = document.getElementById('cancelRequestBtn');
+        const reqError = document.getElementById('requestErrorMsg');
         const closeReqBtn = document.getElementById('closeRequestModal');
 
         if (isMe) {
+            // ... (Keep your existing Edit Profile Logic here) ...
             editBtn.style.display = 'block';
             if(reqBtn) reqBtn.style.display = 'none';
             
-            // --- CLICK EDIT: PRE-FILL DATA ---
+            // Re-attach edit click handler just in case
             editBtn.onclick = () => {
                 document.getElementById('inputName').value = currentPublicUser.name || "";
-                document.getElementById('displayUserOnly').value = currentPublicUser.user_name || "";
-                document.getElementById('displayEmailOnly').value = currentPublicUser.email || "";
-
-                document.getElementById('inputBio').value = pData.about_me || "";
-                document.getElementById('inputSkills').value = pData.skills_text || "";
-                document.getElementById('inputEducation').value = pData.education || "";
-                document.getElementById('inputLocation').value = pData.country || "";
-                
-                const existingLink = pData.linkedin_url || "";
-                document.getElementById('inputWebsite').value = existingLink ? existingLink : "https://";
-                
+                // ... populate other fields ...
                 editModal.style.display = 'block';
             };
-
             document.getElementById('closeEditModal').onclick = () => editModal.style.display = 'none';
-            
-            // --- SAVE LOGIC ---
-            document.getElementById('profileForm').onsubmit = async (e) => {
-                e.preventDefault();
-                const btn = document.getElementById('saveProfileBtn');
-                btn.innerText = "Saving..."; btn.disabled = true;
 
-                const avatarFile = document.getElementById('inputAvatar').files[0];
-                const bannerFile = document.getElementById('inputBanner').files[0];
-                const newName = document.getElementById('inputName').value.trim();
-                
-                if(!newName) { alert("Name cannot be empty."); btn.innerText="Save"; btn.disabled=false; return; }
-
-                let avatarUrl = pData.avatar_url; 
-                let bannerUrl = pData.banner_url;
-
-                if(avatarFile) {
-                    const fileName = `avatar_${currentPublicUser.user_id}_${Date.now()}`;
-                    const { error: upErr } = await supabase.storage.from('profile_images').upload(fileName, avatarFile);
-                    if(!upErr) { const { data: pub } = supabase.storage.from('profile_images').getPublicUrl(fileName); avatarUrl = pub.publicUrl; }
-                }
-
-                if(bannerFile) {
-                    const fileName = `banner_${currentPublicUser.user_id}_${Date.now()}`;
-                    const { error: upErr } = await supabase.storage.from('profile_images').upload(fileName, bannerFile);
-                    if(!upErr) { const { data: pub } = supabase.storage.from('profile_images').getPublicUrl(fileName); bannerUrl = pub.publicUrl; }
-                }
-
-                let rawLink = document.getElementById('inputWebsite').value.trim();
-                if (rawLink === "https://" || rawLink === "") rawLink = null;
-
-                const { error: nameError } = await supabase.from('User')
-                    .update({ name: newName })
-                    .eq('user_id', currentPublicUser.user_id);
-
-                if(nameError) { alert("Error saving name: " + nameError.message); btn.innerText="Save"; btn.disabled=false; return; }
-
-                const updates = {
-                    user_id: currentPublicUser.user_id,
-                    about_me: document.getElementById('inputBio').value,
-                    education: document.getElementById('inputEducation').value,
-                    country: document.getElementById('inputLocation').value,
-                    skills_text: document.getElementById('inputSkills').value,
-                    linkedin_url: rawLink,
-                    avatar_url: avatarUrl,
-                    banner_url: bannerUrl,
-                    updated_at: new Date()
-                };
-
-                const { error: profileError } = await supabase.from('user_profile').upsert(updates, { onConflict: 'user_id' });
-                
-                if(!profileError) { 
-                    editModal.style.display = 'none'; 
-                    document.getElementById('saveSuccessPopup').classList.add('show'); 
-                    window.location.reload();
-                } else { 
-                    alert(profileError.message); 
-                    btn.innerText = "Save"; btn.disabled = false; 
-                }
-            };
         } else {
+            // --- NOT ME (Viewing someone else) ---
             editBtn.style.display = 'none';
             if(reqBtn) {
                 reqBtn.style.display = 'block';
 
-                const setRequestMode = () => {
-                    reqBtn.innerText = "Request Mentorship";
-                    reqBtn.className = "edit-profile-btn"; 
-                    reqBtn.disabled = false;
-                    reqBtn.onclick = () => { reqModal.style.display = 'block'; reqMsgInput.value = ''; };
-                };
+                // Check Mentorship Status
+                const { data: existing } = await supabase.from('mentorship_requests')
+                    .select('id, status')
+                    .eq('sender_id', currentPublicUser.user_id)
+                    .eq('receiver_id', profileUser.user_id)
+                    .maybeSingle();
 
-                const setCancelMode = (requestId) => {
+                // State A: Active Mentorship
+                if (existing && existing.status === 'Accepted') {
+                    reqBtn.innerText = "Mentorship Active"; 
+                    reqBtn.disabled = true;
+                    // Green Style
+                    reqBtn.style.backgroundColor = "#ecfdf5"; 
+                    reqBtn.style.color = "#059669";           
+                    reqBtn.style.border = "1px solid #059669"; 
+                    reqBtn.style.fontWeight = "700";
+                    reqBtn.innerHTML = "<i class='bx bx-check'></i> Mentorship Active";
+                } 
+                // State B: Pending Request (Cancel Option)
+                else if (existing && existing.status === 'Pending') {
                     reqBtn.innerText = "Cancel Request";
                     reqBtn.className = "edit-profile-btn btn-cancel-request"; 
-                    reqBtn.disabled = false;
+                    reqBtn.style.color = "#f4212e";
+                    reqBtn.style.borderColor = "#f4212e";
+                    
+                    reqBtn.onclick = async () => {
+                        if(!confirm("Cancel this request?")) return;
+                        reqBtn.innerText = "...";
+                        await supabase.from('mentorship_requests').delete().eq('id', existing.id);
+                        window.location.reload();
+                    };
+                }
+                // State C: No Request OR Declined (Allow Requesting)
+                else {
+                    // This handles NULL (never requested) OR 'Declined'
+                    reqBtn.innerText = "Request Mentorship";
+                    reqBtn.className = "edit-profile-btn";
                     
                     reqBtn.onclick = () => {
-                        if(cancelConfirmModal) cancelConfirmModal.style.display = 'block';
-                        
-                        if(confirmCancelActionBtn) {
-                            confirmCancelActionBtn.onclick = async () => {
-                                confirmCancelActionBtn.innerText = "Canceling...";
-                                confirmCancelActionBtn.disabled = true;
-                                const { error } = await supabase.from('mentorship_requests').delete().eq('id', requestId);
-                                if(!error) {
-                                    cancelConfirmModal.style.display = 'none';
-                                    confirmCancelActionBtn.innerText = "Yes, Cancel"; 
-                                    confirmCancelActionBtn.disabled = false;
-                                    setRequestMode();
-                                } else {
-                                    alert("Error cancelling: " + error.message);
-                                    confirmCancelActionBtn.innerText = "Yes, Cancel";
-                                    confirmCancelActionBtn.disabled = false;
-                                }
-                            };
-                        }
-                        if(closeCancelModalBtn) closeCancelModalBtn.onclick = () => cancelConfirmModal.style.display = 'none';
+                        reqModal.style.display = 'block';
+                        reqMsgInput.value = '';
+                        reqMsgInput.classList.remove('error');
+                        reqError.style.display = 'none';
                     };
-                };
 
-                const { data: existing } = await supabase.from('mentorship_requests').select('id, status').eq('sender_id', currentPublicUser.user_id).eq('receiver_id', profileUser.user_id).maybeSingle();
+                    // SEND REQUEST LOGIC (The Fix)
+                    if(closeReqBtn) closeReqBtn.onclick = () => reqModal.style.display = 'none';
+                    
+                    if(confirmReqBtn) {
+                        confirmReqBtn.onclick = null; // Clear old listeners
+                        confirmReqBtn.onclick = async () => {
+                            const msg = reqMsgInput.value.trim();
+                            
+                            // UI Validation
+                            if(!msg) { 
+                                reqMsgInput.classList.add('error');
+                                reqError.style.display = 'block';
+                                return; 
+                            }
 
-                if (existing) {
-                    if (existing.status === 'Pending') setCancelMode(existing.id);
-                    else if (existing.status === 'Accepted') { 
-                        reqBtn.innerText = "Mentorship Active"; 
-                        reqBtn.className = "edit-profile-btn"; 
-                        reqBtn.disabled = true;
-                        
-                        // --- GREEN STYLE FIX ---
-                        reqBtn.style.backgroundColor = "#ecfdf5"; // Very light green background
-                        reqBtn.style.color = "#059669";           // Dark Green text
-                        reqBtn.style.border = "1px solid #059669"; // Green border
-                        reqBtn.style.fontWeight = "700";
-                        reqBtn.innerHTML = "<i class='bx bx-check'></i> Mentorship Active";
+                            confirmReqBtn.innerText = "Sending..."; 
+                            confirmReqBtn.disabled = true;
+
+                            let error = null;
+
+                            if (existing) {
+                                // CASE 1: ROW EXISTS (e.g. Declined) -> UPDATE IT
+                                const { error: upErr } = await supabase.from('mentorship_requests')
+                                    .update({ status: 'Pending', message: msg, created_at: new Date() })
+                                    .eq('id', existing.id);
+                                error = upErr;
+                            } else {
+                                // CASE 2: NEW ROW -> INSERT
+                                const { error: inErr } = await supabase.from('mentorship_requests').insert([{
+                                    sender_id: currentPublicUser.user_id, 
+                                    receiver_id: profileUser.user_id, 
+                                    message: msg, 
+                                    status: 'Pending'
+                                }]);
+                                error = inErr;
+                            }
+
+                            if (!error) {
+                                reqModal.style.display = 'none';
+                                await supabase.from("notification").insert([{ 
+                                    user_id: profileUser.user_id, 
+                                    message: { type: "mentorship_request", text: `${currentPublicUser.name} requested mentorship.`, action: "Check Mentorship Tab" }, 
+                                    read_status: false 
+                                }]);
+                                
+                                // Show Success (Reuse your existing success popup or alert)
+                                alert("Request Sent!");
+                                window.location.reload(); // Reload to update button state
+                            } else { 
+                                alert("Error: " + error.message); 
+                                confirmReqBtn.innerText = "Send Request"; 
+                                confirmReqBtn.disabled = false;
+                            }
+                        };
                     }
-                } else {
-                    setRequestMode();
                 }
-
-                if(cancelReqBtn) cancelReqBtn.onclick = () => reqModal.style.display = 'none';
-                if(closeReqBtn) closeReqBtn.onclick = () => reqModal.style.display = 'none';
-
-                if(confirmReqBtn) confirmReqBtn.onclick = async () => {
-                    const msg = reqMsgInput.value.trim();
-                    if(!msg) { alert("Please write a message."); return; }
-                    confirmReqBtn.innerText = "Sending..."; confirmReqBtn.disabled = true;
-                    const { data, error } = await supabase.from('mentorship_requests').insert([{
-                        sender_id: currentPublicUser.user_id, receiver_id: profileUser.user_id, message: msg, status: 'Pending'
-                    }]).select();
-
-                    if (!error && data && data.length > 0) {
-                        reqModal.style.display = 'none';
-                        setCancelMode(data[0].id); 
-                        await supabase.from("notification").insert([{ user_id: profileUser.user_id, message: { type: "mentorship_request", text: `${currentPublicUser.name} requested mentorship.`, action: "Check Mentorship Tab" }, read_status: false }]);
-                        const successPopup = document.getElementById('saveSuccessPopup');
-                        if(successPopup) { successPopup.querySelector('h3').innerText = "Request Sent!"; successPopup.querySelector('p').innerText = "Your request has been sent."; successPopup.classList.add('show'); }
-                    } else { alert("Error: " + (error ? error.message : "Unknown error")); }
-                    confirmReqBtn.innerText = "Send Request"; confirmReqBtn.disabled = false;
-                };
             }
         }
         
+        // Fetch posts logic (keep existing)...
         const tabPosts = document.getElementById('tabPosts');
-        const tabLikes = document.getElementById('tabLikes');
-        const contentPosts = document.getElementById('postsContent');
-        const contentLikes = document.getElementById('likesContent');
-        if(tabPosts && tabLikes) {
-            tabPosts.onclick = () => { tabPosts.classList.add('active'); tabLikes.classList.remove('active'); contentPosts.style.display = 'block'; contentLikes.style.display = 'none'; };
-            tabLikes.onclick = () => { tabLikes.classList.add('active'); tabPosts.classList.remove('active'); contentLikes.style.display = 'block'; contentPosts.style.display = 'none'; fetchLikedPosts(profileUser.user_id); };
-        }
+        // ... rest of your profile post fetching code ...
         fetchPosts(profileUser.user_id);
     }
 
@@ -1205,10 +1156,10 @@ async function loadMentorTab(mode) {
                     <div class="action-buttons">
                         <button class="btn-action btn-accept" onclick="window.openAcceptModal(${req.id}, '${otherUser.user_id}')">Accept</button>
                         
-                        <button class="btn-action btn-decline" onclick="window.openDeclineModal(${req.id})">Decline</button>
+                        <button class="btn-action btn-decline" onclick="window.openDeclineModal(${req.id}, '${otherUser.user_id}')">Decline</button>
                     </div>`;
             }
-            
+
             // --- 3. OUTGOING TAB ---
             else if (mode === 'outgoing') {
                 let statusBadge = '';
@@ -1240,13 +1191,10 @@ async function loadMentorTab(mode) {
 
 window.updateMentorStatus = async function(id, newStatus, senderId) {
         
-        // Only ask for browser confirmation if it's NOT 'Accepted' (e.g. Declining)
-        // If it IS 'Accepted', our fancy modal already handled the "Are you sure?" part.
-        if (newStatus !== 'Accepted') {
+        if (newStatus !== 'Accepted' && newStatus !== 'Declined') {
             if(!confirm(`Are you sure you want to ${newStatus}?`)) return;
         }
         
-        // If Accepting, automatically set BOTH emails to shared
         const updateData = { status: newStatus };
         if (newStatus === 'Accepted') {
             updateData.sender_email_shared = true;
@@ -1261,15 +1209,29 @@ window.updateMentorStatus = async function(id, newStatus, senderId) {
             const card = document.getElementById(`card-${id}`);
             if(card) card.remove();
             
-            // Notification Logic
-            if(newStatus === 'Accepted' && senderId) {
-                await supabase.from("notification").insert([{ 
-                    user_id: senderId, 
-                    message: { 
+            // --- NOTIFICATION LOGIC ---
+            if (senderId) {
+                let notifMessage = {};
+
+                if (newStatus === 'Accepted') {
+                    notifMessage = { 
                         type: "mentorship_update", 
                         text: `Request Accepted! Check the Accepted tab.`, 
                         action: "View Mentorship" 
-                    }, 
+                    };
+                } else if (newStatus === 'Declined') {
+                    // NEW: Notification for Decline
+                    notifMessage = { 
+                        type: "mentorship_update", 
+                        text: `Mentorship request was declined.`, 
+                        action: "View Status" 
+                    };
+                }
+
+                // Send the notification
+                await supabase.from("notification").insert([{ 
+                    user_id: senderId, 
+                    message: notifMessage, 
                     read_status: false 
                 }]);
             }
@@ -1687,26 +1649,25 @@ function setupAuthForms() {
         }
     };
 
-    // ==========================================
+// ==========================================
     //  FEATURE: DECLINE MENTORSHIP MODAL
     // ==========================================
-    window.openDeclineModal = (reqId) => {
+    // Updated to accept senderId
+    window.openDeclineModal = (reqId, senderId) => {
         const m = document.getElementById('declineMentorshipModal');
         if(m) {
             m.style.display = 'block';
             
-            // Cancel Button
             document.getElementById('closeDeclineModal').onclick = () => m.style.display = 'none';
 
-            // Confirm Button
             const btn = document.getElementById('confirmDeclineBtn');
-            btn.onclick = null; // Clear old events
+            btn.onclick = null; 
             
             btn.onclick = async () => {
                 btn.innerText = "Declining...";
                 
-                // Call the existing update function (Status = 'Declined')
-                await window.updateMentorStatus(reqId, 'Declined', null);
+                // Pass senderId to the update function
+                await window.updateMentorStatus(reqId, 'Declined', senderId);
                 
                 m.style.display = 'none';
                 btn.innerText = "Decline";

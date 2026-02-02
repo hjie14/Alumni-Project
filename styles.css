@@ -1599,3 +1599,63 @@ button { cursor: pointer; border: none; outline: none; background: none; }
 .btn-confirm-decline:active {
     transform: translateY(0);
 }
+
+/* --- SEND MODAL VARIANTS --- */
+
+/* Blue Icon Bubble */
+.modal-icon-bubble.send {
+    background-color: #e0f2fe; /* Light Blue */
+    color: #0284c7; /* Blue */
+    box-shadow: 0 0 0 8px #f0f9ff;
+}
+
+/* Blue Confirm Button */
+.btn-confirm-send {
+    flex: 1;
+    padding: 14px 0;
+    border-radius: 12px;
+    border: none;
+    background-color: #0f1419; /* Black/Dark for Send */
+    color: white;
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    transition: all 0.2s;
+}
+
+.btn-confirm-send:hover {
+    background-color: #272c30;
+    transform: translateY(-2px);
+}
+
+.btn-confirm-send:active {
+    transform: translateY(0);
+}
+
+/* Modern Textarea Styling */
+.modern-textarea {
+    width: 100%;
+    padding: 16px;
+    border-radius: 12px;
+    border: 1px solid #cfd9de;
+    background-color: #f7f9f9;
+    font-family: inherit;
+    font-size: 15px;
+    color: #0f1419;
+    resize: none;
+    outline: none;
+    transition: all 0.2s;
+    box-sizing: border-box; /* Ensures padding doesn't break width */
+}
+
+.modern-textarea:focus {
+    background-color: white;
+    border-color: #1d9bf0;
+    box-shadow: 0 0 0 4px rgba(29, 155, 240, 0.1);
+}
+
+.modern-textarea.error {
+    border-color: #ef4444;
+    background-color: #fef2f2;
+}
