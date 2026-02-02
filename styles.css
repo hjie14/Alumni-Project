@@ -1026,33 +1026,134 @@ button { cursor: pointer; border: none; outline: none; background: none; }
     border-radius: 4px;
 }
 
-/* --- RIGHT SIDEBAR SEARCH RESULTS --- */
+/* --- MODERN SEARCH DROPDOWN --- */
 .search-results-dropdown {
+    position: absolute;
+    top: 55px; /* Pushed down slightly for breathing room */
+    left: 0;
+    width: 100%;
     background: white;
-    border-radius: 12px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-    margin-top: 10px;
+    border-radius: 16px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.12); /* Softer, deeper shadow */
+    border: 1px solid #eff3f4;
+    z-index: 1000;
     overflow: hidden;
-    display: none; /* Hidden by default */
+    padding: 8px; /* Inner padding for floating effect */
+    display: none;
 }
+
 .sidebar-user-item {
-    padding: 10px 15px;
     display: flex;
     align-items: center;
-    gap: 10px;
+    padding: 12px 16px; /* More clickable area */
     cursor: pointer;
-    transition: 0.2s;
-    border-bottom: 1px solid #f7f9f9;
+    transition: background 0.2s ease;
+    border-radius: 12px; /* Rounded items */
+    margin-bottom: 2px;
 }
-.sidebar-user-item:hover { background-color: #f7f9f9; }
+
+.sidebar-user-item:hover {
+    background-color: #f7f9f9;
+}
+
+.sidebar-user-item img, 
+.sidebar-user-item .user-avatar-sm {
+    width: 40px; 
+    height: 40px; 
+    margin-right: 12px;
+    border-radius: 50%;
+}
+
+.sidebar-user-item div {
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar-user-item .name {
+    font-weight: 700;
+    font-size: 15px;
+    color: #0f1419;
+}
+
+.sidebar-user-item .handle {
+    font-size: 13px;
+    color: #536471;
+}
+
 .sidebar-view-all {
     text-align: center;
     padding: 12px;
-    font-size: 13px;
-    font-weight: bold;
-    color: var(--primary-color);
+    font-size: 14px;
+    font-weight: 600;
+    color: #1d9bf0;
     cursor: pointer;
-    background: #f7f9f9;
+    border-top: 1px solid #eff3f4;
+    margin-top: 4px;
+}
+.sidebar-view-all:hover {
+    background-color: #f7f9f9;
+}
+
+/* --- RIGHT SIDEBAR FIX --- */
+.right-sidebar {
+    position: relative; /* This stops the dropdown from flying across the screen */
+}
+
+/* --- SEARCH DROPDOWN (Redesigned) --- */
+.search-results-dropdown {
+    position: absolute;
+    top: 55px;  /* Sits just below the search input */
+    left: 20px; /* Matches sidebar padding */
+    right: 20px; /* Matches sidebar padding */
+    width: auto; /* Automatically fills the space between left and right */
+    
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15); /* Premium shadow */
+    border: 1px solid #eff3f4;
+    z-index: 1000;
+    overflow: hidden;
+    padding: 5px;
+}
+
+/* --- SEARCH RESULT ITEMS --- */
+.sidebar-user-item {
+    display: flex;
+    align-items: center;       /* Vertically centers avatar and text */
+    padding: 12px 16px;        /* Comfortable click area */
+    cursor: pointer;
+    transition: background 0.2s ease;
+    border-radius: 12px;
+    
+    /* THE FIX: Adds space between the Avatar and the Text */
+    gap: 15px; 
+}
+
+.sidebar-user-item:hover {
+    background-color: #f7f9f9;
+}
+
+/* Text Container Styling */
+.sidebar-user-item > div:last-child {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+/* Name Styling */
+.sidebar-user-item .name {
+    font-weight: 700;
+    font-size: 15px;
+    color: #0f1419;
+    line-height: 1.2;
+    margin-bottom: 2px; /* Slight separation from handle */
+}
+
+/* Handle Styling */
+.sidebar-user-item .handle {
+    font-size: 14px;
+    color: #536471;
+    line-height: 1.2;
 }
 
 /* --- REDESIGNED CREATE POST MODAL --- */

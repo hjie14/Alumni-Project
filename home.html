@@ -100,6 +100,7 @@
         <div id="postsContainer">
             <div style="padding: 20px; text-align: center; color: #536471;">Loading posts...</div>
         </div>
+
     </main>
 
 <aside class="right-sidebar">
@@ -109,5 +110,18 @@
     </div>
     <div id="sidebarSearchResults" class="search-results-dropdown"></div>
 </aside>
+
+<div id="deletePostModal" class="modal">
+    <div class="modal-content" style="max-width: 320px; border-radius: 24px; padding: 32px 24px; text-align: center; box-shadow: 0 15px 40px rgba(0,0,0,0.15);">
+        <h2 style="font-size:20px; font-weight: 800; margin: 0 0 8px 0; color:#0f1419;">Delete Post?</h2>
+        <p style="font-size:15px; color:#536471; margin: 0 0 24px 0; line-height: 1.4;">
+            This can’t be undone and it will be removed from your profile and the timeline.
+        </p>
+        <div style="display: flex; gap: 12px; width: 100%;">
+            <button id="closeDeletePostModal" style="flex: 1; padding: 12px 0; border-radius: 50px; border: 1px solid #cfd9de; background: white; color: #0f1419; font-weight: 700; cursor: pointer;">Cancel</button>
+            <button id="confirmDeletePostBtn" style="flex: 1; padding: 12px 0; border-radius: 50px; border: none; background: #f4212e; color: white; font-weight: 700; cursor: pointer;">Delete</button>
+        </div>
+    </div>
+</div>
 
     <script type="module" src="script.js"></script>

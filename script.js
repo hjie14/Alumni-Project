@@ -91,14 +91,15 @@ function getAvatarHTML(user, size='sm') {
         }
     }
 
-// ==========================================
-    //  FEATURE: RIGHT SIDEBAR SEARCH
-    // ==========================================
-    function setupRightSidebarSearch() {
+function setupRightSidebarSearch() {
         const searchInput = document.querySelector('.right-sidebar .search-box input');
         let resultsContainer = document.getElementById('sidebarSearchResults');
+        
+        // Ensure container exists
         if(searchInput && !resultsContainer) {
-            resultsContainer = document.createElement('div'); resultsContainer.id = 'sidebarSearchResults'; resultsContainer.className = 'search-results-dropdown';
+            resultsContainer = document.createElement('div'); 
+            resultsContainer.id = 'sidebarSearchResults'; 
+            resultsContainer.className = 'search-results-dropdown';
             if(searchInput.parentNode.nextSibling) searchInput.parentNode.parentNode.insertBefore(resultsContainer, searchInput.parentNode.nextSibling);
             else searchInput.parentNode.parentNode.appendChild(resultsContainer);
         }
@@ -115,22 +116,42 @@ function getAvatarHTML(user, size='sm') {
                 .limit(6);
 
             if(data && data.length > 0) {
-                resultsContainer.innerHTML = ''; resultsContainer.style.display = 'block';
+                resultsContainer.innerHTML = ''; 
+                resultsContainer.style.display = 'block';
+                
                 const displayCount = Math.min(data.length, 5);
                 for(let i=0; i<displayCount; i++) {
                     const u = data[i];
-                    const div = document.createElement('div'); div.className = 'sidebar-user-item';
+                    const div = document.createElement('div'); 
+                    div.className = 'sidebar-user-item';
                     div.onclick = () => window.location.href = `profile.html?id=${u.user_id}`;
                     
                     const avatarHTML = getAvatarHTML(u);
                     
-                    div.innerHTML = `<div style="width:30px; height:30px;">${avatarHTML}</div><div><div style="font-weight:bold;">${escapeHtml(u.name)}</div><div style="font-size:12px; color:#536471;">@${escapeHtml(u.user_name)}</div></div>`;
+                    div.innerHTML = `
+                        <div style="width:40px; height:40px;">${avatarHTML}</div>
+                        <div>
+                            <div class="name">${escapeHtml(u.name)}</div>
+                            <div class="handle">@${escapeHtml(u.user_name)}</div>
+                        </div>`;
                     resultsContainer.appendChild(div);
                 }
-                if(data.length > 5) { const viewAll = document.createElement('div'); viewAll.className = 'sidebar-view-all'; viewAll.innerText = `View all`; viewAll.onclick = () => window.location.href = 'connect.html'; resultsContainer.appendChild(viewAll); }
+                if(data.length > 5) { 
+                    const viewAll = document.createElement('div'); 
+                    viewAll.className = 'sidebar-view-all'; 
+                    viewAll.innerText = `View all results`; 
+                    viewAll.onclick = () => window.location.href = 'connect.html'; 
+                    resultsContainer.appendChild(viewAll); 
+                }
             } else { resultsContainer.style.display = 'none'; }
         });
-        document.addEventListener('click', (e) => { if (!searchInput.contains(e.target) && !resultsContainer.contains(e.target)) resultsContainer.style.display = 'none'; });
+        
+        // Close when clicking outside
+        document.addEventListener('click', (e) => { 
+            if (!searchInput.contains(e.target) && !resultsContainer.contains(e.target)) {
+                resultsContainer.style.display = 'none'; 
+            }
+        });
     }
 
 // ==========================================
@@ -345,6 +366,12 @@ async function renderPosts(posts, container) {
             const isLiked = myLikes.includes(post.id);
             const isBookmarked = myBookmarks.includes(post.id);
 
+            // DELETE CHECK: Am I the owner?
+            let deleteIcon = '';
+            if (currentPublicUser && post.user_id === currentPublicUser.user_id) {
+                deleteIcon = `<i class='bx bx-trash' style="margin-left:auto; cursor:pointer; color:#ef4444; font-size:18px;" onclick="window.openDeletePostModal(${post.id})" title="Delete Post"></i>`;
+            }
+
             const div = document.createElement('article');
             div.className = 'post';
             div.innerHTML = `
@@ -352,13 +379,16 @@ async function renderPosts(posts, container) {
                     ${getAvatarHTML(user)}
                 </div>
                 <div style="flex:1;">
-                    <div class="post-header" onclick="window.location.href='profile.html?id=${user.user_id}'">
-                        <span class="post-name">${escapeHtml(user.name)}</span>
+                    <div class="post-header" style="display:flex; align-items:center;">
+                        <span class="post-name" onclick="window.location.href='profile.html?id=${user.user_id}'" style="cursor:pointer;">${escapeHtml(user.name)}</span>
                         <span class="post-handle">@${escapeHtml(user.user_name)}</span>
                         <span class="post-time">· ${date}</span>
+                        ${deleteIcon}
                     </div>
+                    
                     <div class="post-content" style="margin-top:5px;">${escapeHtml(contentText || "")}</div>
                     ${mediaHTML}
+                    
                     <div class="post-actions" style="margin-top:10px; display:flex; gap:15px;">
                         <button class="action-btn ${isLiked?'liked':''}" onclick="toggleLike(this, ${post.id})">
                             <i class='bx ${isLiked?'bxs-heart':'bx-heart'}'></i> <span>Like</span>
@@ -371,6 +401,44 @@ async function renderPosts(posts, container) {
             container.appendChild(div);
         });
     }
+
+    // --- NEW: GLOBAL DELETE POST LOGIC ---
+    // Add this outside renderPosts (e.g., at the bottom of your script)
+    window.openDeletePostModal = (postId) => {
+        const m = document.getElementById('deletePostModal');
+        if(m) {
+            m.style.display = 'block';
+            document.getElementById('closeDeletePostModal').onclick = () => m.style.display = 'none';
+            
+            const btn = document.getElementById('confirmDeletePostBtn');
+            btn.onclick = null;
+
+            btn.onclick = async () => {
+                btn.innerText = "Deleting...";
+                const { error } = await supabase.from('post').delete().eq('id', postId);
+                
+                if(error) {
+                    alert("Error: " + error.message);
+                    btn.innerText = "Delete";
+                } else {
+                    m.style.display = 'none';
+                    btn.innerText = "Delete";
+                    
+                    // Refresh current view (works for both Home and Profile)
+                    const isProfilePage = window.location.pathname.includes('profile.html');
+                    const isHomePage = window.location.pathname.includes('home.html');
+                    
+                    if(isHomePage) fetchPosts(null);
+                    if(isProfilePage) {
+                         // We need to re-fetch based on the profile user ID
+                         const urlParams = new URLSearchParams(window.location.search);
+                         const targetId = urlParams.get('id') || currentPublicUser.user_id;
+                         fetchPosts(targetId);
+                    }
+                }
+            };
+        }
+    };
 
 // ==========================================
     //  FEATURE: JOBS (With Delete Option)
