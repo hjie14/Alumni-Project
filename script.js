@@ -1054,17 +1054,61 @@ async function fetchLikedPosts(targetUserId) {
         }
     }
 
-    function setupAuthForms() {
+function setupAuthForms() {
+        // Login Form (Keep as is)
         const f = document.getElementById('loginForm');
         if(f) f.onsubmit = async (e) => {
-            e.preventDefault(); const {error} = await supabase.auth.signInWithPassword({ email: document.getElementById('email').value, password: document.getElementById('password').value });
+            e.preventDefault(); 
+            const {error} = await supabase.auth.signInWithPassword({ 
+                email: document.getElementById('email').value, 
+                password: document.getElementById('password').value 
+            });
             if(error) alert(error.message); else window.location.href='home.html';
         }
+
+        // --- SIGN UP FORM (Updated with Validation) ---
         const sf = document.getElementById('signupForm');
         if (sf) sf.addEventListener('submit', async (e) => {
-            e.preventDefault(); const { data, error } = await supabase.auth.signUp({ email: document.getElementById('signupEmail').value, password: document.getElementById('signupPassword').value });
-            if (error) { alert(error.message); return; }
-            if (data.user) { await supabase.from('User').insert([{ user_name: document.getElementById('signupUsername').value, name: document.getElementById('signupName').value, email: document.getElementById('signupEmail').value, auth_id: data.user.id, user_type: 'Student' }]); window.location.href = 'home.html'; }
+            e.preventDefault();
+            
+            const email = document.getElementById('signupEmail').value.trim();
+            const password = document.getElementById('signupPassword').value.trim();
+            const username = document.getElementById('signupUsername').value.trim();
+            const name = document.getElementById('signupName').value.trim();
+
+            // 1. STRICT CHECK: Stop if any field is empty
+            if (!email || !password || !username || !name) {
+                alert("Please fill in ALL fields correctly.");
+                return;
+            }
+
+            // 2. Create Auth User
+            const { data, error } = await supabase.auth.signUp({ email: email, password: password });
+            
+            if (error) { 
+                alert(error.message); 
+                return; 
+            }
+
+            // 3. Create Public Profile (Only if Auth succeeded)
+            if (data.user) {
+                const { error: dbError } = await supabase.from('User').insert([{ 
+                    user_name: username, 
+                    name: name, 
+                    email: email, 
+                    auth_id: data.user.id, 
+                    user_type: 'Student' 
+                }]);
+
+                if (dbError) {
+                    // If DB insert fails, we should ideally delete the Auth user to prevent "ghost" accounts
+                    // But for now, just alerting is enough for this stage
+                    console.error("DB Error:", dbError);
+                    alert("Error creating profile: " + dbError.message);
+                } else {
+                    window.location.href = 'home.html'; 
+                }
+            }
         });
     }
 
