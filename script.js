@@ -25,21 +25,617 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    // --- 2. PAGE ROUTER ---
+    // --- 2. GLOBAL SETUP (Runs on EVERY page) ---
     setupAuthForms();
     setupCommonUI();
+    setupRightSidebarSearch(); // <--- FIXED: Now runs everywhere
 
-    if (path.includes('home.html')) setupHomePage();
-    else if (path.includes('connect.html')) setupConnectPage();
-    else if (path.includes('notifications.html')) setupNotificationsPage();
-    else if (path.includes('profile.html')) setupProfilePage();
-    else if (path.includes('mentor.html')) initMentorDashboard();
-    else if (path.includes('bookmarks.html')) setupBookmarksPage();
-    else if (path.includes('jobpost.html')) initJobPostPage();
-    else if (path.includes('events.html')) initEventPostPage();
+    // --- 3. PAGE ROUTER ---
+    if (path.includes('home.html')) {
+        setupHomePage();
+    } else if (path.includes('connect.html')) {
+        setupConnectPage();
+    } else if (path.includes('notifications.html')) {
+        setupNotificationsPage();
+    } else if (path.includes('profile.html')) {
+        setupProfilePage();
+    } else if (path.includes('mentor.html')) {
+        initMentorDashboard();
+    } else if (path.includes('bookmarks.html')) {
+        setupBookmarksPage();
+    } else if (path.includes('jobpost.html')) {
+        initJobPostPage();
+    } else if (path.includes('event.html') || path.includes('events.html')) {
+        initEventPostPage();
+    }
+
+function getAvatarHTML(user, size='sm') {
+        let avatarUrl = null;
+        
+        // Handle different data structures from joins
+        if (user.avatar_url) {
+            avatarUrl = user.avatar_url;
+        } else if (user.user_profile) {
+            if (Array.isArray(user.user_profile) && user.user_profile.length > 0) {
+                avatarUrl = user.user_profile[0].avatar_url;
+            } else if (typeof user.user_profile === 'object') {
+                avatarUrl = user.user_profile.avatar_url;
+            }
+        }
+
+        const initial = user.name ? user.name.charAt(0).toUpperCase() : '?';
+        const sizeClass = size === 'lg' ? 'profile-avatar-lg' : 'user-avatar-sm';
+        const styles = size === 'sm' ? 'background-color:#0f1419; color:white;' : '';
+
+        if (avatarUrl) {
+            return `<img src="${avatarUrl}" class="${sizeClass}" style="object-fit:cover; cursor:pointer;" onclick="window.location.href='profile.html?id=${user.user_id}'">`;
+        } else {
+            return `<div class="${sizeClass}" style="${styles} cursor:pointer;" onclick="window.location.href='profile.html?id=${user.user_id}'">${initial}</div>`;
+        }
+    }
 
 // ==========================================
-    //  FEATURE: PROFILE PAGE (With Custom Cancel Popup)
+    //  FEATURE: RIGHT SIDEBAR SEARCH
+    // ==========================================
+    function setupRightSidebarSearch() {
+        const searchInput = document.querySelector('.right-sidebar .search-box input');
+        let resultsContainer = document.getElementById('sidebarSearchResults');
+        if(searchInput && !resultsContainer) {
+            resultsContainer = document.createElement('div'); resultsContainer.id = 'sidebarSearchResults'; resultsContainer.className = 'search-results-dropdown';
+            if(searchInput.parentNode.nextSibling) searchInput.parentNode.parentNode.insertBefore(resultsContainer, searchInput.parentNode.nextSibling);
+            else searchInput.parentNode.parentNode.appendChild(resultsContainer);
+        }
+        if(!searchInput) return;
+
+        searchInput.addEventListener('input', async (e) => {
+            const query = e.target.value.trim();
+            if(query.length === 0) { resultsContainer.style.display = 'none'; return; }
+
+            // JOIN user_profile
+            const { data } = await supabase.from('User')
+                .select('user_id, name, user_name, user_profile(avatar_url)')
+                .ilike('name', `%${query}%`)
+                .limit(6);
+
+            if(data && data.length > 0) {
+                resultsContainer.innerHTML = ''; resultsContainer.style.display = 'block';
+                const displayCount = Math.min(data.length, 5);
+                for(let i=0; i<displayCount; i++) {
+                    const u = data[i];
+                    const div = document.createElement('div'); div.className = 'sidebar-user-item';
+                    div.onclick = () => window.location.href = `profile.html?id=${u.user_id}`;
+                    
+                    const avatarHTML = getAvatarHTML(u);
+                    
+                    div.innerHTML = `<div style="width:30px; height:30px;">${avatarHTML}</div><div><div style="font-weight:bold;">${escapeHtml(u.name)}</div><div style="font-size:12px; color:#536471;">@${escapeHtml(u.user_name)}</div></div>`;
+                    resultsContainer.appendChild(div);
+                }
+                if(data.length > 5) { const viewAll = document.createElement('div'); viewAll.className = 'sidebar-view-all'; viewAll.innerText = `View all`; viewAll.onclick = () => window.location.href = 'connect.html'; resultsContainer.appendChild(viewAll); }
+            } else { resultsContainer.style.display = 'none'; }
+        });
+        document.addEventListener('click', (e) => { if (!searchInput.contains(e.target) && !resultsContainer.contains(e.target)) resultsContainer.style.display = 'none'; });
+    }
+
+// ==========================================
+    //  FEATURE: HOME PAGE
+    // ==========================================
+    function setupHomePage() {
+        if(currentPublicUser) {
+             const modal = document.getElementById('postModal');
+             const sidebarPostBtn = document.getElementById('sidebarPostBtn');
+             const closeBtn = document.querySelector('.close-modal');
+             
+             // Update Create Post Avatar
+             const modalAvatar = document.querySelector('#postModal .current-user-avatar');
+             if(modalAvatar && currentPublicUser) {
+                 modalAvatar.innerHTML = getAvatarHTML(currentPublicUser);
+                 modalAvatar.style.background = 'none'; 
+                 modalAvatar.style.border = 'none';
+             }
+
+             if(modal) {
+                 if(sidebarPostBtn) sidebarPostBtn.addEventListener('click', () => modal.style.display = 'block');
+                 if(closeBtn) closeBtn.onclick = () => modal.style.display = "none";
+                 window.onclick = (e) => { if (e.target == modal) modal.style.display = "none"; }
+             }
+             setupCreatePostLogic();
+        }
+        setupRightSidebarSearch();
+        fetchPosts(null); // This was calling a missing function
+    }
+
+function setupCreatePostLogic() {
+        const input = document.getElementById('modalInput');
+        const imgInput = document.getElementById('postImageInput');
+        const vidInput = document.getElementById('postVideoInput');
+        const previewContainer = document.getElementById('mediaPreviewContainer');
+        const imgPreview = document.getElementById('imagePreview');
+        const vidPreview = document.getElementById('videoPreview');
+        const removeBtn = document.getElementById('removeMediaBtn');
+        const postBtn = document.getElementById('modalPostBtn');
+        
+        let selectedFile = null;
+
+        const clearPreview = () => {
+            selectedFile = null;
+            if(imgInput) imgInput.value = '';
+            if(vidInput) vidInput.value = '';
+            previewContainer.style.display = 'none';
+            imgPreview.style.display = 'none';
+            vidPreview.style.display = 'none';
+            vidPreview.src = "";
+            imgPreview.src = "";
+        };
+
+        if(imgInput) {
+            imgInput.onchange = (e) => {
+                const file = e.target.files[0];
+                if(file) {
+                    clearPreview(); 
+                    selectedFile = file;
+                    imgPreview.src = URL.createObjectURL(file);
+                    imgPreview.style.display = 'block';
+                    previewContainer.style.display = 'block';
+                    postBtn.classList.add('active'); postBtn.disabled = false;
+                }
+            };
+        }
+
+        if(vidInput) {
+            vidInput.onchange = (e) => {
+                const file = e.target.files[0];
+                if(file) {
+                    clearPreview();
+                    selectedFile = file;
+                    vidPreview.src = URL.createObjectURL(file);
+                    vidPreview.style.display = 'block';
+                    previewContainer.style.display = 'block';
+                    postBtn.classList.add('active'); postBtn.disabled = false;
+                }
+            };
+        }
+
+        if(removeBtn) {
+            removeBtn.onclick = () => {
+                clearPreview();
+                if(input.value.trim() === '') { 
+                    postBtn.classList.remove('active'); 
+                    postBtn.disabled = true; 
+                }
+            };
+        }
+
+        if(input) {
+            input.oninput = () => {
+                if(input.value.trim().length > 0 || selectedFile) {
+                    postBtn.classList.add('active');
+                    postBtn.disabled = false;
+                } else {
+                    postBtn.classList.remove('active');
+                    postBtn.disabled = true;
+                }
+            };
+        }
+
+        if(postBtn) {
+            postBtn.onclick = async () => {
+                if (!currentPublicUser) return;
+                
+                const text = input.value;
+                if(!text && !selectedFile) return;
+
+                postBtn.innerText = "Posting...";
+                postBtn.disabled = true;
+
+                let fileUrl = null;
+
+                if (selectedFile) {
+                    const ext = selectedFile.name.split('.').pop();
+                    const fileName = `${Date.now()}_${Math.floor(Math.random()*1000)}.${ext}`;
+                    
+                    const { error: uploadError } = await supabase.storage
+                        .from('post_images')
+                        .upload(fileName, selectedFile);
+
+                    if (uploadError) {
+                        alert("Upload failed: " + uploadError.message);
+                        postBtn.innerText = "Post";
+                        postBtn.disabled = false;
+                        return;
+                    }
+
+                    const { data: publicData } = supabase.storage
+                        .from('post_images')
+                        .getPublicUrl(fileName);
+                    
+                    fileUrl = publicData.publicUrl;
+                }
+
+                const { error } = await supabase.from('post').insert([{ 
+                    text_content: text, 
+                    image_url: fileUrl, 
+                    user_id: currentPublicUser.user_id 
+                }]);
+
+                if (!error) {
+                    input.value = '';
+                    clearPreview();
+                    document.getElementById('postModal').style.display = "none";
+                    postBtn.innerText = "Post";
+                    fetchPosts(null); 
+                } else {
+                    alert("Error: " + error.message);
+                    postBtn.innerText = "Post";
+                    postBtn.disabled = false;
+                }
+            };
+        }
+    }
+
+// --- MISSING FUNCTION RESTORED ---
+    async function fetchPosts(userIdFilter) {
+        const container = document.getElementById(userIdFilter ? 'myPostsContainer' : 'postsContainer');
+        if(!container) return;
+
+        container.innerHTML = `<div style="text-align:center; padding:20px; color:#536471;">Loading...</div>`;
+
+        // Join User AND user_profile to get the avatar URL
+        let query = supabase.from('post').select(`
+            id, created_at, text_content, image_url, user_id,
+            User!post_user_id_fkey ( 
+                user_id, name, user_name,
+                user_profile ( avatar_url ) 
+            )
+        `).order('created_at', { ascending: false });
+
+        if (userIdFilter) query = query.eq('user_id', userIdFilter);
+        
+        const { data: posts, error } = await query;
+        
+        if (error) {
+            console.error(error);
+            container.innerHTML = "Error loading posts.";
+            return;
+        }
+
+        renderPosts(posts, container);
+    }
+
+async function renderPosts(posts, container) {
+        container.innerHTML = '';
+        if (!posts || posts.length === 0) { container.innerHTML = `<div class="no-posts-message">No posts found</div>`; return; }
+
+        let myLikes = []; let myBookmarks = [];
+        if(currentPublicUser) {
+            const { data: l } = await supabase.from('likes').select('post_id').eq('user_id', currentPublicUser.user_id);
+            const { data: b } = await supabase.from('bookmarks').select('post_id').eq('user_id', currentPublicUser.user_id);
+            if(l) myLikes = l.map(x => x.post_id); if(b) myBookmarks = b.map(x => x.post_id);
+        }
+
+        posts.forEach(post => {
+            const user = post.User || { name: 'Unknown', user_name: 'unknown' };
+            const date = new Date(post.created_at).toLocaleDateString();
+            let contentText = (post.text_content && typeof post.text_content === 'object') ? post.text_content.body : post.text_content;
+
+            // Media
+            let mediaHTML = '';
+            if (post.image_url) {
+                const isVideo = post.image_url.match(/\.(mp4|webm|mov|mkv)$/i);
+                if(isVideo) mediaHTML = `<video src="${post.image_url}" controls style="width:100%; border-radius:12px; margin-top:10px;"></video>`;
+                else mediaHTML = `<img src="${post.image_url}" style="width:100%; border-radius:12px; margin-top:10px;">`;
+            }
+
+            const isLiked = myLikes.includes(post.id);
+            const isBookmarked = myBookmarks.includes(post.id);
+
+            const div = document.createElement('article');
+            div.className = 'post';
+            div.innerHTML = `
+                <div style="width:40px; height:40px; margin-right:10px;">
+                    ${getAvatarHTML(user)}
+                </div>
+                <div style="flex:1;">
+                    <div class="post-header" onclick="window.location.href='profile.html?id=${user.user_id}'">
+                        <span class="post-name">${escapeHtml(user.name)}</span>
+                        <span class="post-handle">@${escapeHtml(user.user_name)}</span>
+                        <span class="post-time">· ${date}</span>
+                    </div>
+                    <div class="post-content" style="margin-top:5px;">${escapeHtml(contentText || "")}</div>
+                    ${mediaHTML}
+                    <div class="post-actions" style="margin-top:10px; display:flex; gap:15px;">
+                        <button class="action-btn ${isLiked?'liked':''}" onclick="toggleLike(this, ${post.id})">
+                            <i class='bx ${isLiked?'bxs-heart':'bx-heart'}'></i> <span>Like</span>
+                        </button>
+                        <button class="action-btn ${isBookmarked?'bookmarked':''}" onclick="toggleBookmark(this, ${post.id})">
+                            <i class='bx ${isBookmarked?'bxs-bookmark':'bx-bookmark'}'></i> <span>${isBookmarked?'Saved':'Save'}</span>
+                        </button>
+                    </div>
+                </div>`;
+            container.appendChild(div);
+        });
+    }
+
+// ==========================================
+    //  FEATURE: JOBS & APPLICATION
+    // ==========================================
+    async function initJobPostPage() {
+        if (!currentPublicUser) { window.location.href = 'index.html'; return; }
+        
+        // --- POSTING LOGIC ---
+        const modal = document.getElementById('jobPostModal');
+        const openBtn = document.getElementById('sidebarPostBtn');
+        const closeBtn = document.getElementById('closeJobModal');
+        const submitBtn = document.getElementById('submitJobBtn');
+
+        if(openBtn) openBtn.onclick = () => modal.style.display = 'block';
+        if(closeBtn) closeBtn.onclick = () => modal.style.display = 'none';
+        window.onclick = (e) => { 
+            if(e.target == modal) modal.style.display = 'none'; 
+            if(e.target == document.getElementById('applyJobModal')) document.getElementById('applyJobModal').style.display = 'none';
+        };
+
+        if(submitBtn) {
+            submitBtn.onclick = async () => {
+                const title = document.getElementById('inputJobTitle').value; 
+                const company = document.getElementById('inputJobCompany').value; 
+                const location = document.getElementById('inputJobLocation').value; 
+                const type = document.getElementById('inputJobType').value; 
+                const desc = document.getElementById('inputJobDesc').value;
+                
+                if(!title || !company) { alert("Please fill in Job Title and Company."); return; }
+                
+                submitBtn.innerText = "Posting..."; submitBtn.disabled = true;
+                const fullDesc = `${type} | ${location}\n\n${desc}`;
+
+                const { error } = await supabase.from('jobs').insert([{ title: title, company: company, description: fullDesc, posted_by: currentPublicUser.user_id }]);
+                
+                if (error) { alert("Error: " + error.message); } 
+                else { 
+                    modal.style.display = 'none';
+                    showSuccess("Job Posted!", "Your listing is now live.");
+                    fetchJobs(); 
+                }
+                submitBtn.innerText = "Post Opportunity"; submitBtn.disabled = false;
+            };
+        }
+
+        // --- APPLICATION LOGIC ---
+        const applyModal = document.getElementById('applyJobModal');
+        const closeApply = document.getElementById('closeApplyModal');
+        const confirmApply = document.getElementById('confirmApplyBtn');
+        let currentJobId = null;
+
+        if(closeApply) closeApply.onclick = () => applyModal.style.display = 'none';
+
+        // Expose function to Window so HTML buttons can call it
+        window.openApplyModal = function(jobId, jobTitle, jobCompany) {
+            currentJobId = jobId;
+            document.getElementById('applyJobTitleDisplay').innerText = jobTitle;
+            document.getElementById('applyJobCompanyDisplay').innerText = jobCompany;
+            
+            // Auto-fill details
+            document.getElementById('applyName').value = currentPublicUser.name || "";
+            document.getElementById('applyEmail').value = currentPublicUser.email || "";
+            
+            applyModal.style.display = 'block';
+        };
+
+        if(confirmApply) {
+            confirmApply.onclick = async () => {
+                const name = document.getElementById('applyName').value;
+                const email = document.getElementById('applyEmail').value;
+                const link = document.getElementById('applyLink').value;
+                const note = document.getElementById('applyNote').value;
+
+                if(!name || !email) { alert("Name and Email are required."); return; }
+
+                confirmApply.innerText = "Submitting..."; confirmApply.disabled = true;
+
+                const { error } = await supabase.from('job_applications').insert([{
+                    job_id: currentJobId,
+                    applicant_id: currentPublicUser.user_id,
+                    applicant_name: name,
+                    applicant_email: email,
+                    portfolio_link: link,
+                    cover_note: note
+                }]);
+
+                if(error) { alert("Error: " + error.message); }
+                else {
+                    applyModal.style.display = 'none';
+                    showSuccess("Application Sent!", "Good luck!");
+                }
+                confirmApply.innerText = "Submit Application"; confirmApply.disabled = false;
+            };
+        }
+
+        fetchJobs();
+    }
+
+async function fetchJobs() {
+        const container = document.getElementById('jobsContainer');
+        if(!container) return;
+        
+        const { data: jobs, error } = await supabase.from('jobs').select('*, User:posted_by(name)').order('created_at', { ascending: false });
+        
+        if(error) { container.innerHTML = 'Error loading jobs.'; return; }
+        
+        container.innerHTML = '';
+        if(!jobs || jobs.length === 0) { container.innerHTML = '<div class="no-posts-message">No jobs posted yet.</div>'; return; }
+
+        jobs.forEach(job => {
+            const date = new Date(job.created_at).toLocaleDateString();
+            const posterName = job.User?.name || "Unknown";
+            
+            // Escape strings for JS function call
+            const safeTitle = escapeHtml(job.title).replace(/'/g, "\\'"); 
+            const safeCompany = escapeHtml(job.company).replace(/'/g, "\\'");
+
+            container.innerHTML += `
+            <div class="post" style="cursor: default;">
+                <div style="width: 50px; height: 50px; background:#f7f9f9; border-radius:8px; display:flex; align-items:center; justify-content:center; margin-right:15px; font-size:24px;">💼</div>
+                <div style="flex:1;">
+                    <div style="font-size:13px; color:#536471; margin-bottom:5px;">Posted by ${escapeHtml(posterName)} · ${date}</div>
+                    <h3 style="margin:0; font-size:18px;">${escapeHtml(job.title)}</h3>
+                    <div style="font-weight:bold; color:#1d9bf0; margin-bottom:8px;">${escapeHtml(job.company)}</div>
+                    <p style="font-size:15px; color:#0f1419; white-space:pre-wrap;">${escapeHtml(job.description)}</p>
+                    
+                    <button class="btn-action" 
+                        style="margin-top:10px; background:#0f1419; color:white; border:none;" 
+                        onclick="window.openApplyModal(${job.id}, '${safeTitle}', '${safeCompany}')">
+                        Apply Now
+                    </button>
+                </div>
+            </div>`;
+        });
+    }
+
+// ==========================================
+    //  FEATURE: EVENTS & RSVP
+    // ==========================================
+    async function initEventPostPage() {
+        if (!currentPublicUser) { window.location.href = 'index.html'; return; }
+        
+        // --- POSTING LOGIC ---
+        const modal = document.getElementById('eventPostModal');
+        const openBtn = document.getElementById('sidebarPostBtn');
+        const closeBtn = document.getElementById('closeEventModal');
+        const submitBtn = document.getElementById('submitEventBtn');
+
+        if(openBtn) openBtn.onclick = () => modal.style.display = 'block';
+        if(closeBtn) closeBtn.onclick = () => modal.style.display = 'none';
+        window.onclick = (e) => { 
+            if(e.target == modal) modal.style.display = 'none'; 
+            if(e.target == document.getElementById('rsvpModal')) document.getElementById('rsvpModal').style.display = 'none';
+        };
+
+        if(submitBtn) {
+            submitBtn.onclick = async () => {
+                const title = document.getElementById('inputEventTitle').value; 
+                const date = document.getElementById('inputEventDate').value; 
+                const time = document.getElementById('inputEventTime').value; 
+                const location = document.getElementById('inputEventLocation').value; 
+                const desc = document.getElementById('inputEventDesc').value;
+                
+                if(!title || !date || !location) { alert("Please fill in required fields."); return; }
+                
+                submitBtn.innerText = "Publishing..."; submitBtn.disabled = true;
+                const fullDesc = `📅 ${date} at ${time}\n📍 ${location}\n\n${desc}`;
+
+                const { error } = await supabase.from('events').insert([{ title: title, location: location, description: fullDesc, posted_by: currentPublicUser.user_id }]);
+                
+                if (error) { alert("Error: " + error.message); } 
+                else { 
+                    modal.style.display = 'none';
+                    showSuccess("Event Created!", "It is now live.");
+                    fetchEvents();
+                }
+                submitBtn.innerText = "Publish Event"; submitBtn.disabled = false;
+            };
+        }
+
+        // --- RSVP LOGIC ---
+        const rsvpModal = document.getElementById('rsvpModal');
+        const closeRsvp = document.getElementById('closeRsvpModal');
+        const confirmRsvp = document.getElementById('confirmRsvpBtn');
+        let currentEventId = null;
+
+        if(closeRsvp) closeRsvp.onclick = () => rsvpModal.style.display = 'none';
+
+        window.openRsvpModal = function(eventId, eventTitle) {
+            currentEventId = eventId;
+            document.getElementById('rsvpEventTitleDisplay').innerText = eventTitle;
+            
+            // Auto-fill
+            document.getElementById('rsvpName').value = currentPublicUser.name || "";
+            document.getElementById('rsvpEmail').value = currentPublicUser.email || "";
+            
+            rsvpModal.style.display = 'block';
+        };
+
+        if(confirmRsvp) {
+            confirmRsvp.onclick = async () => {
+                const name = document.getElementById('rsvpName').value;
+                const email = document.getElementById('rsvpEmail').value;
+                const status = document.getElementById('rsvpStatus').value;
+
+                if(!name) return;
+
+                confirmRsvp.innerText = "Confirming..."; confirmRsvp.disabled = true;
+
+                const { error } = await supabase.from('event_rsvps').insert([{
+                    event_id: currentEventId,
+                    attendee_id: currentPublicUser.user_id,
+                    attendee_name: name,
+                    attendee_email: email,
+                    status: status
+                }]);
+
+                if(error) { alert("Error: " + error.message); }
+                else {
+                    rsvpModal.style.display = 'none';
+                    showSuccess("RSVP Confirmed!", "See you there.");
+                }
+                confirmRsvp.innerText = "Confirm Seat"; confirmRsvp.disabled = false;
+            };
+        }
+
+        fetchEvents();
+    }
+
+async function fetchEvents() {
+        const container = document.getElementById('eventsContainer');
+        if(!container) return;
+        
+        const { data: events, error } = await supabase.from('events').select('*, User:posted_by(name)').order('created_at', { ascending: false });
+        
+        if(error) { container.innerHTML = 'Error loading events.'; return; }
+        
+        container.innerHTML = '';
+        if(!events || events.length === 0) { container.innerHTML = '<div class="no-posts-message">No upcoming events.</div>'; return; }
+
+        events.forEach(event => {
+            const date = new Date(event.created_at).toLocaleDateString();
+            const hostName = event.User?.name || "Unknown";
+            const safeTitle = escapeHtml(event.title).replace(/'/g, "\\'");
+
+            container.innerHTML += `
+            <div class="post" style="cursor: default;">
+                <div style="width: 50px; height: 50px; background:#e8f5fd; color:#1d9bf0; border-radius:12px; display:flex; flex-direction:column; align-items:center; justify-content:center; margin-right:15px; font-weight:bold;">
+                    <i class='bx bx-calendar'></i>
+                </div>
+                <div style="flex:1;">
+                    <div style="font-size:13px; color:#536471; margin-bottom:5px;">Hosted by ${escapeHtml(hostName)}</div>
+                    <h3 style="margin:0; font-size:18px;">${escapeHtml(event.title)}</h3>
+                    <div style="color:#536471; font-size:14px; margin-bottom:8px;">
+                        <i class='bx bx-map'></i> ${escapeHtml(event.location)}
+                    </div>
+                    <p style="font-size:15px; color:#0f1419; white-space:pre-wrap;">${escapeHtml(event.description)}</p>
+                    
+                    <button class="btn-action" 
+                        style="margin-top:10px; background:#0f1419; color:white;" 
+                        onclick="window.openRsvpModal(${event.id}, '${safeTitle}')">
+                        RSVP
+                    </button>
+                </div>
+            </div>`;
+        });
+    }
+
+    // Helper: Success Popup
+    function showSuccess(title, msg) {
+        const popup = document.getElementById('successPopup');
+        if(popup) {
+            popup.querySelector('h3').innerText = title;
+            popup.querySelector('p').innerText = msg;
+            popup.classList.add('show');
+        } else {
+            alert(title + "\n" + msg);
+        }
+    }
+
+// ==========================================
+    //  FEATURE: PROFILE PAGE
     // ==========================================
     async function setupProfilePage() {
         if (!currentPublicUser) { window.location.href = 'index.html'; return; }
@@ -55,14 +651,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             if(u) profileUser = u;
         }
 
-        // Render Profile Data
+        // Fetch Profile Data (Bio, Skills, etc)
         const { data: pDataRaw } = await supabase.from('user_profile').select('*').eq('user_id', profileUser.user_id).maybeSingle();
         const pData = pDataRaw || {};
 
         document.getElementById('headerName').innerText = profileUser.name;
         document.getElementById('displayName').innerText = profileUser.name;
         document.getElementById('displayHandle').innerText = `@${profileUser.user_name}`;
-        document.getElementById('profileAvatar').innerText = profileUser.name.charAt(0).toUpperCase();
         document.getElementById('displayBio').innerText = pData.about_me || "No bio yet.";
 
         if(pData.country) { document.getElementById('metaLocation').style.display='block'; document.getElementById('txtLocation').innerText = pData.country; }
@@ -75,87 +670,153 @@ document.addEventListener('DOMContentLoaded', async () => {
             pData.skills_text.split(',').forEach(s => { if(s.trim()) skillsContainer.innerHTML += `<span class="skill-tag">${escapeHtml(s.trim())}</span>`; });
         }
 
-        // BUTTONS & MODALS
+        // Render Images
+        const avatarContainer = document.getElementById('profileAvatarContainer');
+        const avatarText = document.getElementById('profileAvatarText');
+        const avatarImg = document.getElementById('profileAvatarImg');
+        const bannerDiv = document.getElementById('profileBanner');
+
+        if(pData.avatar_url) {
+            avatarText.style.display = 'none';
+            avatarImg.src = pData.avatar_url;
+            avatarImg.style.display = 'block';
+            avatarContainer.style.backgroundColor = 'transparent';
+            avatarContainer.style.border = '4px solid white';
+        } else {
+            avatarText.style.display = 'block';
+            avatarText.innerText = profileUser.name.charAt(0).toUpperCase();
+            avatarImg.style.display = 'none';
+            avatarContainer.style.backgroundColor = '#0f1419';
+            avatarContainer.style.color = 'white';
+        }
+
+        if(pData.banner_url) bannerDiv.style.backgroundImage = `url('${pData.banner_url}')`;
+
+        // Buttons & Modals
         const editBtn = document.getElementById('editToggleBtn');
         const reqBtn = document.getElementById('requestMentorBtn');
-        
-        // Modals
         const editModal = document.getElementById('editProfileModal');
         const reqModal = document.getElementById('requestMentorModal');
-        const cancelConfirmModal = document.getElementById('cancelConfirmModal'); // <--- NEW MODAL
-        
-        // Form Elements
+        const cancelConfirmModal = document.getElementById('cancelConfirmModal');
+        const confirmCancelActionBtn = document.getElementById('confirmCancelActionBtn');
+        const closeCancelModalBtn = document.getElementById('closeCancelModalBtn');
         const reqMsgInput = document.getElementById('requestMessageInput');
         const confirmReqBtn = document.getElementById('confirmRequestBtn');
         const cancelReqBtn = document.getElementById('cancelRequestBtn');
         const closeReqBtn = document.getElementById('closeRequestModal');
-        
-        // Cancel Confirmation Buttons
-        const confirmCancelActionBtn = document.getElementById('confirmCancelActionBtn');
-        const closeCancelModalBtn = document.getElementById('closeCancelModalBtn');
 
         if (isMe) {
             editBtn.style.display = 'block';
             if(reqBtn) reqBtn.style.display = 'none';
             
-            editBtn.onclick = () => editModal.style.display = 'block';
+            // --- CLICK EDIT: PRE-FILL DATA ---
+            editBtn.onclick = () => {
+                document.getElementById('inputName').value = currentPublicUser.name || "";
+                document.getElementById('displayUserOnly').value = currentPublicUser.user_name || "";
+                document.getElementById('displayEmailOnly').value = currentPublicUser.email || "";
+
+                document.getElementById('inputBio').value = pData.about_me || "";
+                document.getElementById('inputSkills').value = pData.skills_text || "";
+                document.getElementById('inputEducation').value = pData.education || "";
+                document.getElementById('inputLocation').value = pData.country || "";
+                
+                const existingLink = pData.linkedin_url || "";
+                document.getElementById('inputWebsite').value = existingLink ? existingLink : "https://";
+                
+                editModal.style.display = 'block';
+            };
+
             document.getElementById('closeEditModal').onclick = () => editModal.style.display = 'none';
             
+            // --- SAVE LOGIC ---
             document.getElementById('profileForm').onsubmit = async (e) => {
                 e.preventDefault();
-                const btn = e.target.querySelector('button');
+                const btn = document.getElementById('saveProfileBtn');
                 btn.innerText = "Saving..."; btn.disabled = true;
+
+                const avatarFile = document.getElementById('inputAvatar').files[0];
+                const bannerFile = document.getElementById('inputBanner').files[0];
+                const newName = document.getElementById('inputName').value.trim();
+                
+                if(!newName) { alert("Name cannot be empty."); btn.innerText="Save"; btn.disabled=false; return; }
+
+                let avatarUrl = pData.avatar_url; 
+                let bannerUrl = pData.banner_url;
+
+                if(avatarFile) {
+                    const fileName = `avatar_${currentPublicUser.user_id}_${Date.now()}`;
+                    const { error: upErr } = await supabase.storage.from('profile_images').upload(fileName, avatarFile);
+                    if(!upErr) { const { data: pub } = supabase.storage.from('profile_images').getPublicUrl(fileName); avatarUrl = pub.publicUrl; }
+                }
+
+                if(bannerFile) {
+                    const fileName = `banner_${currentPublicUser.user_id}_${Date.now()}`;
+                    const { error: upErr } = await supabase.storage.from('profile_images').upload(fileName, bannerFile);
+                    if(!upErr) { const { data: pub } = supabase.storage.from('profile_images').getPublicUrl(fileName); bannerUrl = pub.publicUrl; }
+                }
+
+                let rawLink = document.getElementById('inputWebsite').value.trim();
+                if (rawLink === "https://" || rawLink === "") rawLink = null;
+
+                const { error: nameError } = await supabase.from('User')
+                    .update({ name: newName })
+                    .eq('user_id', currentPublicUser.user_id);
+
+                if(nameError) { alert("Error saving name: " + nameError.message); btn.innerText="Save"; btn.disabled=false; return; }
+
                 const updates = {
                     user_id: currentPublicUser.user_id,
                     about_me: document.getElementById('inputBio').value,
                     education: document.getElementById('inputEducation').value,
                     country: document.getElementById('inputLocation').value,
                     skills_text: document.getElementById('inputSkills').value,
-                    linkedin_url: document.getElementById('inputWebsite').value,
+                    linkedin_url: rawLink,
+                    avatar_url: avatarUrl,
+                    banner_url: bannerUrl,
                     updated_at: new Date()
                 };
-                const { error } = await supabase.from('user_profile').upsert(updates, { onConflict: 'user_id' });
-                if(!error) { editModal.style.display = 'none'; document.getElementById('saveSuccessPopup').classList.add('show'); }
-                else { alert(error.message); btn.innerText = "Save"; btn.disabled = false; }
+
+                const { error: profileError } = await supabase.from('user_profile').upsert(updates, { onConflict: 'user_id' });
+                
+                if(!profileError) { 
+                    editModal.style.display = 'none'; 
+                    document.getElementById('saveSuccessPopup').classList.add('show'); 
+                    window.location.reload();
+                } else { 
+                    alert(profileError.message); 
+                    btn.innerText = "Save"; btn.disabled = false; 
+                }
             };
         } else {
             editBtn.style.display = 'none';
             if(reqBtn) {
                 reqBtn.style.display = 'block';
 
-                // --- STATE 1: REQUEST ---
                 const setRequestMode = () => {
                     reqBtn.innerText = "Request Mentorship";
                     reqBtn.className = "edit-profile-btn"; 
-                    reqBtn.style.cssText = ""; 
                     reqBtn.disabled = false;
                     reqBtn.onclick = () => { reqModal.style.display = 'block'; reqMsgInput.value = ''; };
                 };
 
-                // --- STATE 2: CANCEL (UPDATED WITH POPUP) ---
                 const setCancelMode = (requestId) => {
                     reqBtn.innerText = "Cancel Request";
                     reqBtn.className = "edit-profile-btn btn-cancel-request"; 
-                    reqBtn.style.cssText = ""; 
                     reqBtn.disabled = false;
                     
                     reqBtn.onclick = () => {
-                        // 1. OPEN CUSTOM MODAL (Instead of confirm())
                         if(cancelConfirmModal) cancelConfirmModal.style.display = 'block';
-
-                        // 2. DEFINE "YES" ACTION
+                        
                         if(confirmCancelActionBtn) {
                             confirmCancelActionBtn.onclick = async () => {
                                 confirmCancelActionBtn.innerText = "Canceling...";
                                 confirmCancelActionBtn.disabled = true;
-
                                 const { error } = await supabase.from('mentorship_requests').delete().eq('id', requestId);
-                                
                                 if(!error) {
                                     cancelConfirmModal.style.display = 'none';
                                     confirmCancelActionBtn.innerText = "Yes, Cancel"; 
                                     confirmCancelActionBtn.disabled = false;
-                                    setRequestMode(); // RESET TO BLACK BUTTON
+                                    setRequestMode();
                                 } else {
                                     alert("Error cancelling: " + error.message);
                                     confirmCancelActionBtn.innerText = "Yes, Cancel";
@@ -163,92 +824,46 @@ document.addEventListener('DOMContentLoaded', async () => {
                                 }
                             };
                         }
-
-                        // 3. DEFINE "NO" ACTION
-                        if(closeCancelModalBtn) {
-                            closeCancelModalBtn.onclick = () => {
-                                cancelConfirmModal.style.display = 'none';
-                            };
-                        }
-                        
-                        // Close on background click
-                        window.onclick = (e) => { 
-                            if (e.target == cancelConfirmModal) cancelConfirmModal.style.display='none';
-                            if (e.target == reqModal) reqModal.style.display='none';
-                            if (e.target == editModal) editModal.style.display='none';
-                        };
+                        if(closeCancelModalBtn) closeCancelModalBtn.onclick = () => cancelConfirmModal.style.display = 'none';
                     };
                 };
 
-                // Check Status on Load
-                const { data: existing } = await supabase.from('mentorship_requests')
-                    .select('id, status')
-                    .eq('sender_id', currentPublicUser.user_id)
-                    .eq('receiver_id', profileUser.user_id)
-                    .maybeSingle();
+                const { data: existing } = await supabase.from('mentorship_requests').select('id, status').eq('sender_id', currentPublicUser.user_id).eq('receiver_id', profileUser.user_id).maybeSingle();
 
                 if (existing) {
                     if (existing.status === 'Pending') setCancelMode(existing.id);
-                    else if (existing.status === 'Accepted') { 
-                        reqBtn.innerText = "Mentorship Active"; 
-                        reqBtn.className = "edit-profile-btn";
-                        reqBtn.disabled = true; 
-                    }
+                    else if (existing.status === 'Accepted') { reqBtn.innerText = "Mentorship Active"; reqBtn.className = "edit-profile-btn"; reqBtn.disabled = true; }
                 } else {
                     setRequestMode();
                 }
 
-                // Modal Close Logic (Request Form)
-                const closePopup = () => { reqModal.style.display = 'none'; };
-                cancelReqBtn.onclick = closePopup;
-                closeReqBtn.onclick = closePopup;
+                if(cancelReqBtn) cancelReqBtn.onclick = () => reqModal.style.display = 'none';
+                if(closeReqBtn) closeReqBtn.onclick = () => reqModal.style.display = 'none';
 
-                // Send Request Logic
-                confirmReqBtn.onclick = async () => {
+                if(confirmReqBtn) confirmReqBtn.onclick = async () => {
                     const msg = reqMsgInput.value.trim();
                     if(!msg) { alert("Please write a message."); return; }
-
-                    confirmReqBtn.innerText = "Sending..."; 
-                    confirmReqBtn.disabled = true;
-
+                    confirmReqBtn.innerText = "Sending..."; confirmReqBtn.disabled = true;
                     const { data, error } = await supabase.from('mentorship_requests').insert([{
-                        sender_id: currentPublicUser.user_id,
-                        receiver_id: profileUser.user_id,
-                        message: msg,
-                        status: 'Pending'
+                        sender_id: currentPublicUser.user_id, receiver_id: profileUser.user_id, message: msg, status: 'Pending'
                     }]).select();
 
                     if (!error && data && data.length > 0) {
-                        closePopup();
+                        reqModal.style.display = 'none';
                         setCancelMode(data[0].id); 
-                        
-                        await supabase.from("notification").insert([{
-                            user_id: profileUser.user_id,
-                            message: { type: "mentorship_request", text: `${currentPublicUser.name} requested mentorship.`, action: "Check Mentorship Tab" },
-                            read_status: false
-                        }]);
-                        
+                        await supabase.from("notification").insert([{ user_id: profileUser.user_id, message: { type: "mentorship_request", text: `${currentPublicUser.name} requested mentorship.`, action: "Check Mentorship Tab" }, read_status: false }]);
                         const successPopup = document.getElementById('saveSuccessPopup');
-                        if(successPopup) {
-                            successPopup.querySelector('h3').innerText = "Request Sent!";
-                            successPopup.querySelector('p').innerText = "Your request has been sent.";
-                            successPopup.classList.add('show');
-                        }
-                    } else {
-                        alert("Error: " + (error ? error.message : "Unknown error"));
-                    }
-                    confirmReqBtn.innerText = "Send Request"; 
-                    confirmReqBtn.disabled = false;
+                        if(successPopup) { successPopup.querySelector('h3').innerText = "Request Sent!"; successPopup.querySelector('p').innerText = "Your request has been sent."; successPopup.classList.add('show'); }
+                    } else { alert("Error: " + (error ? error.message : "Unknown error")); }
+                    confirmReqBtn.innerText = "Send Request"; confirmReqBtn.disabled = false;
                 };
             }
         }
         
-        // Tab Logic
         const tabPosts = document.getElementById('tabPosts');
         const tabLikes = document.getElementById('tabLikes');
         const contentPosts = document.getElementById('postsContent');
         const contentLikes = document.getElementById('likesContent');
-        
         if(tabPosts && tabLikes) {
             tabPosts.onclick = () => { tabPosts.classList.add('active'); tabLikes.classList.remove('active'); contentPosts.style.display = 'block'; contentLikes.style.display = 'none'; };
             tabLikes.onclick = () => { tabLikes.classList.add('active'); tabPosts.classList.remove('active'); contentLikes.style.display = 'block'; contentPosts.style.display = 'none'; fetchLikedPosts(profileUser.user_id); };
@@ -256,496 +871,179 @@ document.addEventListener('DOMContentLoaded', async () => {
         fetchPosts(profileUser.user_id);
     }
 
+async function fetchLikedPosts(targetUserId) {
+        const container = document.getElementById('myLikesContainer');
+        if(!container) return;
+        container.innerHTML = `<div style="text-align:center; padding:20px; color:#536471;">Loading likes...</div>`;
+        const { data: likes } = await supabase.from('likes').select('post_id').eq('user_id', targetUserId);
+        if(!likes || likes.length === 0) { container.innerHTML = `<div class="no-posts-message">No liked posts yet.</div>`; return; }
+        const postIds = likes.map(l => l.post_id);
+        const { data: posts } = await supabase.from('post').select(`id, created_at, text_content, image_url, user_id, User!post_user_id_fkey ( user_id, name, user_name, user_profile(avatar_url) )`).in('id', postIds).order('created_at', { ascending: false });
+        renderPosts(posts, container);
+    }
+
     // ==========================================
-    //  FEATURE: MENTOR DASHBOARD (Strict Separation)
+    //  FEATURE: MENTOR DASHBOARD
     // ==========================================
     let currentMentorTab = 'incoming'; 
 
     async function initMentorDashboard() {
         if (!currentPublicUser) { window.location.href = 'index.html'; return; }
-        
-        // 1. Immediate Count Refresh
         await updateAllMentorCounts();
-
-        // 2. Load Default Tab
         window.switchMentorTab('incoming');
     }
 
     window.switchMentorTab = function(tabName) {
         currentMentorTab = tabName;
-        
-        // Update Classes
         document.querySelectorAll('.stat-card').forEach(el => el.classList.remove('active-tab'));
         const activeTab = document.getElementById(`tab-${tabName}`);
         if(activeTab) activeTab.classList.add('active-tab');
-        
-        const titles = {
-            'incoming': 'Incoming Requests (Pending)', 
-            'outgoing': 'Your Request Status'     
-        };
-        const titleEl = document.getElementById('section-title');
-        if(titleEl) titleEl.innerText = titles[tabName] || 'Mentorship';
-
+        const titles = { 'incoming': 'Received Requests', 'outgoing': 'Sent Requests' };
+        document.getElementById('section-title').innerText = titles[tabName];
         loadMentorTab(tabName);
     }
 
     async function updateAllMentorCounts() {
-        // Count Incoming (Pending Only)
-        const { count: incoming } = await supabase.from('mentorship_requests')
-            .select('*', { count: 'exact', head: true })
-            .eq('receiver_id', currentPublicUser.user_id).eq('status', 'Pending');
-        
-        const incEl = document.getElementById('count-incoming');
-        if(incEl) incEl.innerText = incoming !== null ? incoming : 0;
-
-        // Count Outgoing (All Sent)
-        const { count: outgoing } = await supabase.from('mentorship_requests')
-            .select('*', { count: 'exact', head: true })
-            .eq('sender_id', currentPublicUser.user_id);
-            
-        const outEl = document.getElementById('count-outgoing');
-        if(outEl) outEl.innerText = outgoing !== null ? outgoing : 0;
+        const { count: incoming } = await supabase.from('mentorship_requests').select('*', { count: 'exact', head: true }).eq('receiver_id', currentPublicUser.user_id).eq('status', 'Pending');
+        const incEl = document.getElementById('count-incoming'); if(incEl) incEl.innerText = incoming || 0;
+        const { count: outgoing } = await supabase.from('mentorship_requests').select('*', { count: 'exact', head: true }).eq('sender_id', currentPublicUser.user_id);
+        const outEl = document.getElementById('count-outgoing'); if(outEl) outEl.innerText = outgoing || 0;
     }
 
     async function loadMentorTab(mode) {
         const container = document.getElementById('requests-container');
         const emptyMsg = document.getElementById('empty-msg');
-        
         if(!container) return;
-
         container.innerHTML = `<div style="text-align:center; padding:20px; color:#536471;"><i class='bx bx-loader-alt bx-spin'></i> Loading...</div>`;
         if(emptyMsg) emptyMsg.style.display = 'none';
 
-        let query = supabase.from('mentorship_requests').select(`
-            id, created_at, message, status, sender_email_shared, receiver_email_shared,
-            sender:sender_id ( user_id, name, user_name, email ),
-            receiver:receiver_id ( user_id, name, user_name, email )
-        `).order('created_at', { ascending: false });
+        let query = supabase.from('mentorship_requests').select(`id, created_at, message, status, sender_email_shared, receiver_email_shared, sender:sender_id ( user_id, name, user_name, email ), receiver:receiver_id ( user_id, name, user_name, email )`).order('created_at', { ascending: false });
 
-        // --- STRICT FILTERING ---
-        if (mode === 'incoming') {
-            // Logic: I am the RECEIVER + Status must be PENDING
-            query = query.eq('receiver_id', currentPublicUser.user_id).eq('status', 'Pending');
-        } else if (mode === 'outgoing') {
-            // Logic: I am the SENDER (Show all statuses so I can see updates)
-            query = query.eq('sender_id', currentPublicUser.user_id);
-        }
+        if (mode === 'incoming') query = query.eq('receiver_id', currentPublicUser.user_id).eq('status', 'Pending');
+        else if (mode === 'outgoing') query = query.eq('sender_id', currentPublicUser.user_id);
 
         const { data, error } = await query;
-        if (error) { console.error(error); container.innerHTML = 'Error loading data.'; return; }
-
+        if (error) { container.innerHTML = 'Error loading data.'; return; }
         container.innerHTML = '';
-
-        if (!data || data.length === 0) {
-            if(emptyMsg) {
-                emptyMsg.style.display = 'block';
-                document.getElementById('empty-text').innerText = mode === 'incoming' ? "No pending requests." : "You haven't sent any requests.";
-            }
-            return;
-        }
+        if (!data || data.length === 0) { if(emptyMsg) { emptyMsg.style.display = 'block'; document.getElementById('empty-text').innerText = mode === 'incoming' ? "No pending requests." : "You haven't sent any requests."; } return; }
 
         data.forEach(req => {
             const isSender = req.sender.user_id === currentPublicUser.user_id;
-            // If I am sender, show Receiver info. If I am receiver, show Sender info.
             const otherUser = isSender ? req.receiver : req.sender;
-            const initial = otherUser.name ? otherUser.name.charAt(0).toUpperCase() : '?';
-            
             let actionArea = '';
 
             if (mode === 'incoming') {
-                // TAB 1: Accept/Decline Buttons
-                actionArea = `
-                    <div class="action-buttons">
-                        <button class="btn-action btn-accept" onclick="window.updateMentorStatus(${req.id}, 'Accepted', '${otherUser.user_id}')">Accept</button>
-                        <button class="btn-action btn-decline" onclick="window.updateMentorStatus(${req.id}, 'Declined', null)">Decline</button>
-                    </div>
-                `;
+                actionArea = `<div class="action-buttons"><button class="btn-action btn-accept" onclick="window.updateMentorStatus(${req.id}, 'Accepted', '${otherUser.user_id}')">Accept</button><button class="btn-action btn-decline" onclick="window.updateMentorStatus(${req.id}, 'Declined', null)">Decline</button></div>`;
             } else if (mode === 'outgoing') {
-                // TAB 2: Status Badge
                 let statusBadge = '';
-                if(req.status === 'Pending') {
-                    statusBadge = `<span style="color:#d97706; font-weight:bold; font-size:14px;"><i class='bx bx-time'></i> Pending</span>`;
-                } else if (req.status === 'Declined') {
-                    statusBadge = `<span style="color:#dc3545; font-weight:bold; font-size:14px;"><i class='bx bx-x-circle'></i> Declined</span>`;
-                } else if (req.status === 'Accepted') {
-                    statusBadge = `<span style="color:#059669; font-weight:bold; font-size:14px;"><i class='bx bx-check-circle'></i> Accepted</span>`;
-                    
-                    // Logic: Sharing Email (Sender side)
-                    const myEmailShared = req.sender_email_shared; 
-                    const theirEmailShared = req.receiver_email_shared;
-
-                    let shareBtn = myEmailShared 
-                        ? `<div style="color:#059669; font-size:13px; margin-top:8px;">You shared your email</div>` 
-                        : `<button class="btn-action" style="background:#0f1419; color:white; margin-top:8px; width:auto; font-size:12px;" onclick="window.shareMentorEmail(${req.id}, '${otherUser.user_id}')">Share Email</button>`;
-                    
-                    let viewEmail = theirEmailShared 
-                        ? `<div style="margin-top:8px; font-weight:bold; color:#0f1419;">Contact: ${escapeHtml(otherUser.email)}</div>` 
-                        : `<div style="margin-top:8px; font-size:13px; color:#536471; font-style:italic;">Waiting for email...</div>`;
-                    
-                    statusBadge += `<div style="margin-top:10px; padding-top:10px; border-top:1px solid #eee;">${shareBtn}${viewEmail}</div>`;
+                if(req.status === 'Pending') statusBadge = `<span style="color:#d97706; font-weight:bold;">Pending</span>`;
+                else if(req.status === 'Declined') statusBadge = `<span style="color:#dc3545; font-weight:bold;">Declined</span>`;
+                else if(req.status === 'Accepted') {
+                    statusBadge = `<span style="color:#059669; font-weight:bold;">Accepted</span>`;
+                    let shareBtn = req.sender_email_shared ? `<div style="color:#059669; font-size:12px; margin-top:5px;">Email shared</div>` : `<button class="btn-action" style="background:#0f1419; color:white; margin-top:5px; width:auto; font-size:12px;" onclick="window.shareMentorEmail(${req.id}, '${otherUser.user_id}')">Share Email</button>`;
+                    let viewEmail = req.receiver_email_shared ? `<div style="margin-top:5px; font-weight:bold;">${escapeHtml(otherUser.email)}</div>` : `<div style="margin-top:5px; font-size:12px; color:#536471;">Waiting for email...</div>`;
+                    statusBadge += `<div>${shareBtn}${viewEmail}</div>`;
                 }
                 actionArea = `<div style="margin-top:15px;">${statusBadge}</div>`;
             }
-
-            const html = `
-                <div class="request-card" id="card-${req.id}">
-                    <div style="display:flex; gap:12px; align-items:flex-start;">
-                        <div class="user-avatar-sm" 
-                             style="background-color:#0f1419; color:white; cursor:pointer; min-width:40px;"
-                             onclick="window.location.href='profile.html?id=${otherUser.user_id}'">
-                            ${initial}
-                        </div>
-                        <div style="flex:1;">
-                            <div class="meta-info" style="cursor:pointer;" onclick="window.location.href='profile.html?id=${otherUser.user_id}'">
-                                @${escapeHtml(otherUser.user_name)}
-                            </div>
-                            <h3 style="font-size:16px; margin-bottom:5px; cursor:pointer;" 
-                                onclick="window.location.href='profile.html?id=${otherUser.user_id}'">
-                                ${escapeHtml(otherUser.name)}
-                            </h3>
-                            <p>"${escapeHtml(req.message)}"</p>
-                            ${actionArea}
-                        </div>
-                    </div>
-                </div>
-            `;
-            container.innerHTML += html;
+            container.innerHTML += `<div class="request-card" id="card-${req.id}"><div style="display:flex; gap:12px; align-items:flex-start;"><div class="user-avatar-sm" style="background-color:#0f1419; color:white;">${otherUser.name.charAt(0).toUpperCase()}</div><div style="flex:1;"><div class="meta-info">@${escapeHtml(otherUser.user_name)}</div><h3 style="font-size:16px; margin-bottom:5px;">${escapeHtml(otherUser.name)}</h3><p>"${escapeHtml(req.message)}"</p>${actionArea}</div></div></div>`;
         });
     }
 
-    // UPDATE STATUS
     window.updateMentorStatus = async function(id, newStatus, senderId) {
-        if(!confirm(`Are you sure you want to ${newStatus} this request?`)) return;
+        if(!confirm(`Are you sure you want to ${newStatus}?`)) return;
         const { error } = await supabase.from('mentorship_requests').update({ status: newStatus }).eq('id', id);
-        if (error) alert("Error: " + error.message); 
-        else { 
-            // Remove locally instantly
-            const card = document.getElementById(`card-${id}`);
-            if(card) card.remove();
-            
-            if(newStatus === 'Accepted' && senderId) { 
-                await supabase.from("notification").insert([{ user_id: senderId, message: { type: "mentorship_update", text: `${currentPublicUser.name} accepted your mentorship request!`, action: "Go to Mentorship page to connect." }, read_status: false }]); 
-            } 
-            updateAllMentorCounts(); 
-            loadMentorTab(currentMentorTab); 
-        }
+        if (error) alert("Error"); 
+        else { document.getElementById(`card-${id}`).remove(); if(newStatus === 'Accepted' && senderId) await supabase.from("notification").insert([{ user_id: senderId, message: { type: "mentorship_update", text: `Request Accepted!`, action: "Check Mentorship" }, read_status: false }]); updateAllMentorCounts(); loadMentorTab(currentMentorTab); }
     };
 
-    // SHARE EMAIL
     window.shareMentorEmail = async function(reqId, targetUserId) {
         const { data: req } = await supabase.from('mentorship_requests').select('sender_id').eq('id', reqId).single();
         let updatePayload = req.sender_id === currentPublicUser.user_id ? { sender_email_shared: true } : { receiver_email_shared: true };
         const { error } = await supabase.from('mentorship_requests').update(updatePayload).eq('id', reqId);
-        if (error) alert("Error sharing email."); 
-        else { 
-            const popup = document.getElementById('saveSuccessPopup');
-            if(popup) {
-                popup.querySelector('h3').innerText = "Email Shared!";
-                popup.querySelector('p').innerText = "Your contact info is now visible.";
-                popup.classList.add('show'); 
-            }
-            await supabase.from("notification").insert([{ user_id: targetUserId, message: { type: "email_shared", text: `${currentPublicUser.name} shared their contact info with you.`, action: "View Email" }, read_status: false }]); 
-            loadMentorTab('outgoing'); // Refresh to show email shared status
-        }
+        if (error) alert("Error sharing email."); else { alert("Email Shared"); loadMentorTab('outgoing'); }
     };
 
-    // ==========================================
-    //  FEATURE: CONNECT PAGE (Missing Function)
+// ==========================================
+    //  FEATURE: CONNECT PAGE (Updated Render)
     // ==========================================
     function setupConnectPage() {
         if (!currentPublicUser) { window.location.href = 'index.html'; return; }
-        
         const searchInput = document.getElementById('connectSearchInput');
         const container = document.getElementById('connectContainer');
-        
-        // Safety check: if we are not on the Connect page, stop here
         if(!searchInput || !container) return;
 
         const fetchUsers = async (q) => {
-            container.innerHTML = `<div style="text-align:center; padding:20px; color:#536471;"><i class='bx bx-loader-alt bx-spin' style="font-size:24px;"></i><br>Finding people...</div>`;
-
-            // Select all users except myself
-            let query = supabase.from('User')
-                .select('*')
-                .neq('user_id', currentPublicUser.user_id);
-
-            // If user typed something, filter by name
-            if(q) query = query.ilike('name', `%${q}%`);
-
-            const { data, error } = await query;
+            container.innerHTML = `<div style="text-align:center; padding:20px; color:#536471;">Finding people...</div>`;
             
-            container.innerHTML = ''; // Clear loading spinner
+            // JOIN user_profile
+            let query = supabase.from('User')
+                .select('*, user_profile(avatar_url)')
+                .neq('user_id', currentPublicUser.user_id);
+            
+            if(q) query = query.ilike('name', `%${q}%`);
+            const { data } = await query;
+            
+            container.innerHTML = '';
+            if (!data || data.length === 0) { container.innerHTML = '<div style="padding:20px; text-align:center; color:#536471;">No users found.</div>'; return; }
 
-            if (error) {
-                console.error("Connect Page Error:", error);
-                container.innerHTML = `<div style="padding:20px; text-align:center; color:red;">Error loading users.</div>`;
-                return;
-            }
-
-            if (!data || data.length === 0) {
-                 container.innerHTML = '<div style="padding:20px; text-align:center; color:#536471;">No users found.</div>';
-                 return;
-            }
-
-            // Render Users
             data.forEach(u => {
-                const el = document.createElement('div'); 
-                el.className = 'connect-item';
+                const el = document.createElement('div'); el.className = 'connect-item';
+                const safeName = u.name || "Unknown"; const safeHandle = u.user_name || "user";
                 
-                const safeName = u.name || "Unknown";
-                const safeHandle = u.user_name || "user";
-                const initial = safeName.charAt(0).toUpperCase();
+                // Use Helper
+                const avatarHTML = getAvatarHTML(u);
 
-                const infoDiv = document.createElement('div');
-                infoDiv.className = 'connect-info';
-                infoDiv.innerHTML = `
-                    <div class="user-avatar-sm" style="background-color:#0f1419; color:white;">${initial}</div>
-                    <div>
-                        <div style="font-weight:700;">${escapeHtml(safeName)}</div>
-                        <div style="color:#536471; font-size:14px;">@${escapeHtml(safeHandle)}</div>
-                    </div>`;
-
-                const btn = document.createElement('button');
-                btn.className = 'connect-btn';
-                btn.innerText = 'View Profile'; 
-                btn.onclick = () => { window.location.href = `profile.html?id=${u.user_id}`; };
-
-                el.appendChild(infoDiv);
-                el.appendChild(btn);
-                container.appendChild(el);
+                const infoDiv = document.createElement('div'); infoDiv.className = 'connect-info';
+                infoDiv.innerHTML = `<div style="width:40px; height:40px;">${avatarHTML}</div><div><div style="font-weight:700;">${escapeHtml(safeName)}</div><div style="color:#536471; font-size:14px;">@${escapeHtml(safeHandle)}</div></div>`;
+                const btn = document.createElement('button'); btn.className = 'connect-btn'; btn.innerText = 'View Profile'; btn.onclick = () => { window.location.href = `profile.html?id=${u.user_id}`; };
+                el.appendChild(infoDiv); el.appendChild(btn); container.appendChild(el);
             });
         };
-
-        // Initial Load
         fetchUsers('');
-        
-        // Search Listener
         searchInput.oninput = (e) => fetchUsers(e.target.value);
     }
 
     // ==========================================
-    //  FEATURE: HOME PAGE POSTS
+    //  FEATURE: NOTIFICATIONS & BOOKMARKS
     // ==========================================
-    function setupHomePage() {
-        if(currentPublicUser) {
-             setupInputLogic('inlineInput', 'inlinePostBtn');
-             const modal = document.getElementById('postModal');
-             if(modal) {
-                 const sidebarPostBtn = document.getElementById('sidebarPostBtn');
-                 const closeBtn = document.querySelector('.close-modal');
-                 if(sidebarPostBtn) sidebarPostBtn.addEventListener('click', () => modal.style.display = 'block');
-                 if(closeBtn) closeBtn.onclick = () => modal.style.display = "none";
-                 window.onclick = (e) => { if (e.target == modal) modal.style.display = "none"; }
-             }
-        }
-        fetchPosts(null);
+    async function setupNotificationsPage() { 
+        const container = document.getElementById("notificationsContainer");
+        container.innerHTML = `<div style="text-align:center; padding:20px; color:#536471;"><i class='bx bx-loader-alt bx-spin' style="font-size:24px;"></i><br>Loading...</div>`;
+        const { data: notifs } = await supabase.from("notification").select("*").eq("user_id", currentPublicUser.user_id).order("created_at", {ascending:false});
+        container.innerHTML = ''; 
+        if(!notifs || notifs.length === 0) { container.innerHTML = '<div style="padding:40px; text-align:center; color:#536471;">No new notifications</div>'; return; }
+        notifs.forEach(n => {
+             const msg = n.message; let text = typeof msg === 'string' ? msg : (msg.text || "New Notification"); let subtext = (typeof msg === 'object' && msg.action) ? `<div style="font-weight:bold; color:var(--primary-color); margin-top:5px; font-size:13px;">${msg.action}</div>` : '';
+             const el = document.createElement('div'); el.className = 'notification-item'; el.innerHTML = `<div class="user-avatar-sm" style="background:#0f1419; color:white;">!</div><div><div>${escapeHtml(text)}</div>${subtext}</div>`; container.appendChild(el);
+        });
     }
 
-    // ==========================================
-    //  FEATURE: BOOKMARKS PAGE
-    // ==========================================
     function setupBookmarksPage() {
         if (!currentPublicUser) { window.location.href = 'index.html'; return; }
         fetchBookmarkedPosts();
     }
 
     async function fetchBookmarkedPosts() {
-        const container = document.getElementById('postsContainer') || document.getElementById('myPostsContainer');
-        if(!container) return;
-        
+        const container = document.getElementById('postsContainer'); if(!container) return;
         container.innerHTML = `<div style="text-align:center; padding:20px; color:#536471;"><i class='bx bx-loader-alt bx-spin' style="font-size:24px;"></i><br>Loading bookmarks...</div>`;
-
         const { data: bookmarks } = await supabase.from('bookmarks').select('post_id').eq('user_id', currentPublicUser.user_id);
-        
-        if(!bookmarks || bookmarks.length === 0) {
-            container.innerHTML = `<div class="no-posts-message">No bookmarks yet.</div>`;
-            return;
-        }
-
+        if(!bookmarks || bookmarks.length === 0) { container.innerHTML = `<div class="no-posts-message">No bookmarks yet.</div>`; return; }
         const postIds = bookmarks.map(b => b.post_id);
-
-        const { data: posts } = await supabase
-            .from('post')
-            .select(`id, created_at, text_content, user_id, User!post_user_id_fkey ( user_id, name, user_name )`)
-            .in('id', postIds)
-            .order('created_at', { ascending: false });
-
+        const { data: posts } = await supabase.from('post').select(`id, created_at, text_content, image_url, user_id, User!post_user_id_fkey ( user_id, name, user_name )`).in('id', postIds).order('created_at', { ascending: false });
         renderPosts(posts, container);
     }
 
-    async function fetchLikedPosts(targetUserId) {
-        const container = document.getElementById('myLikesContainer');
-        if(!container) return;
-        container.innerHTML = `<div style="text-align:center; padding:20px; color:#536471;"><i class='bx bx-loader-alt bx-spin'></i> Loading likes...</div>`;
-
-        const { data: likes } = await supabase.from('likes').select('post_id').eq('user_id', targetUserId);
-        
-        if(!likes || likes.length === 0) {
-            container.innerHTML = `<div class="no-posts-message">No liked posts yet.</div>`;
-            return;
-        }
-
-        const postIds = likes.map(l => l.post_id);
-
-        const { data: posts } = await supabase
-            .from('post')
-            .select(`id, created_at, text_content, user_id, User!post_user_id_fkey ( user_id, name, user_name )`)
-            .in('id', postIds)
-            .order('created_at', { ascending: false });
-
-        renderPosts(posts, container);
-    }
-
-    async function fetchPosts(userIdFilter = null) {
-        const container = document.getElementById(userIdFilter ? 'myPostsContainer' : 'postsContainer');
-        if(!container) return;
-
-        container.innerHTML = `<div style="text-align:center; padding:20px; color:#536471;"><i class='bx bx-loader-alt bx-spin' style="font-size:24px;"></i><br>Loading posts...</div>`;
-
-        let query = supabase.from('post').select(`
-            id, created_at, text_content, user_id,
-            User!post_user_id_fkey ( user_id, name, user_name )
-        `).order('created_at', { ascending: false });
-
-        if (userIdFilter) query = query.eq('user_id', userIdFilter);
-        
-        const { data: posts, error } = await query;
-        if (error) { console.error("Error:", error); container.innerHTML="Error loading posts"; return; }
-        
-        renderPosts(posts, container);
-    }
-
-    async function renderPosts(posts, container) {
-        container.innerHTML = '';
-        if (!posts || posts.length === 0) { container.innerHTML = `<div class="no-posts-message">No posts found</div>`; return; }
-
-        let myLikes = [];
-        let myBookmarks = [];
-        if(currentPublicUser) {
-            const { data: l } = await supabase.from('likes').select('post_id').eq('user_id', currentPublicUser.user_id);
-            const { data: b } = await supabase.from('bookmarks').select('post_id').eq('user_id', currentPublicUser.user_id);
-            if(l) myLikes = l.map(x => x.post_id);
-            if(b) myBookmarks = b.map(x => x.post_id);
-        }
-
-        posts.forEach(post => {
-            const user = post.User || { name: 'Unknown', user_name: 'unknown' };
-            const initial = user.name ? user.name.charAt(0).toUpperCase() : '?';
-            let contentText = (post.text_content && typeof post.text_content === 'object') ? (post.text_content.body || "") : post.text_content;
-            const date = new Date(post.created_at).toLocaleDateString();
-
-            const isLiked = myLikes.includes(post.id);
-            const isBookmarked = myBookmarks.includes(post.id);
-            const bookmarkText = isBookmarked ? 'Saved' : 'Save';
-
-            const div = document.createElement('article');
-            div.className = 'post';
-            div.innerHTML = `
-                <div class="user-avatar-sm" style="background-color:#0f1419; color:white;">${initial}</div>
-                <div style="flex:1;">
-                    <div class="post-header" onclick="window.location.href='profile.html?id=${user.user_id}'">
-                        <span class="post-name">${escapeHtml(user.name)}</span>
-                        <span class="post-handle">@${escapeHtml(user.user_name)}</span>
-                        <span class="post-time">· ${date}</span>
-                    </div>
-                    <div class="post-content" style="margin-top:5px;">${escapeHtml(contentText)}</div>
-                    
-                    <div class="post-actions">
-                        <button class="action-btn ${isLiked ? 'liked' : ''}" onclick="toggleLike(this, ${post.id})">
-                            <i class='bx ${isLiked ? 'bxs-heart' : 'bx-heart'}'></i> <span>Like</span>
-                        </button>
-                        <button class="action-btn ${isBookmarked ? 'bookmarked' : ''}" onclick="toggleBookmark(this, ${post.id})">
-                            <i class='bx ${isBookmarked ? 'bxs-bookmark' : 'bx-bookmark'}'></i> <span>${bookmarkText}</span>
-                        </button>
-                    </div>
-                </div>`;
-            container.appendChild(div);
-        });
-    }
-
-    window.toggleLike = async (btn, postId) => {
-        if(!currentPublicUser) return alert("Sign in to like");
-        const icon = btn.querySelector('i');
-        const isLiked = btn.classList.contains('liked');
-
-        if(isLiked) {
-            btn.classList.remove('liked');
-            icon.className = 'bx bx-heart';
-            await supabase.from('likes').delete().match({ user_id: currentPublicUser.user_id, post_id: postId });
-        } else {
-            btn.classList.add('liked');
-            icon.className = 'bx bxs-heart';
-            await supabase.from('likes').insert([{ user_id: currentPublicUser.user_id, post_id: postId }]);
-        }
-    };
-
-    window.toggleBookmark = async (btn, postId) => {
-        if(!currentPublicUser) return alert("Sign in to bookmark");
-        const icon = btn.querySelector('i');
-        const textSpan = btn.querySelector('span');
-        const isSaved = btn.classList.contains('bookmarked');
-
-        if(isSaved) {
-            btn.classList.remove('bookmarked');
-            icon.className = 'bx bx-bookmark';
-            textSpan.innerText = 'Save';
-            await supabase.from('bookmarks').delete().match({ user_id: currentPublicUser.user_id, post_id: postId });
-        } else {
-            btn.classList.add('bookmarked');
-            icon.className = 'bx bxs-bookmark';
-            textSpan.innerText = 'Saved';
-            await supabase.from('bookmarks').insert([{ user_id: currentPublicUser.user_id, post_id: postId }]);
-        }
-    };
-
+// ==========================================
+    //  FEATURE: SIDEBAR USER (Updated)
     // ==========================================
-    //  FEATURE: NOTIFICATIONS
-    // ==========================================
-    async function setupNotificationsPage() { 
-        const container = document.getElementById("notificationsContainer");
-        container.innerHTML = `<div style="text-align:center; padding:20px; color:#536471;"><i class='bx bx-loader-alt bx-spin' style="font-size:24px;"></i><br>Loading...</div>`;
-
-        const { data: notifs } = await supabase.from("notification").select("*").eq("user_id", currentPublicUser.user_id).order("created_at", {ascending:false});
-         
-        container.innerHTML = ''; 
-        if(!notifs || notifs.length === 0) {
-             container.innerHTML = '<div style="padding:40px; text-align:center; color:#536471;">No new notifications</div>';
-             return;
-        }
-         
-        notifs.forEach(n => {
-             const msg = n.message;
-             let text = typeof msg === 'string' ? msg : (msg.text || "New Notification");
-             let subtext = (typeof msg === 'object' && msg.action) ? `<div style="font-weight:bold; color:var(--primary-color); margin-top:5px; font-size:13px;">${msg.action}</div>` : '';
-             
-             const el = document.createElement('div');
-             el.className = 'notification-item';
-             el.innerHTML = `<div class="user-avatar-sm" style="background:#0f1419; color:white;">!</div><div><div>${escapeHtml(text)}</div>${subtext}</div>`;
-             container.appendChild(el);
-        });
-    }
-
-    // ==========================================
-    //  HELPERS
-    // ==========================================
-    function setupInputLogic(inputId, btnId) {
-        const input = document.getElementById(inputId); const btn = document.getElementById(btnId);
-        if(!input || !btn) return;
-        input.addEventListener('input', function() { this.style.height = 'auto'; this.style.height = (this.scrollHeight) + 'px'; if(this.value.trim().length > 0) { btn.classList.add('active'); btn.disabled = false; } else { btn.classList.remove('active'); btn.disabled = true; } });
-        btn.addEventListener('click', async () => {
-            if (!currentPublicUser) { alert("Please sign in to post."); return; }
-            btn.disabled = true; btn.innerText = "Posting...";
-            const { error } = await supabase.from('post').insert([{ text_content: { body: input.value }, user_id: currentPublicUser.user_id }]);
-            if (!error) { input.value = ''; input.style.height = 'auto'; btn.classList.remove('active'); if(document.getElementById('postModal')) document.getElementById('postModal').style.display="none"; fetchPosts(null); btn.innerText = "Post"; } 
-            else { alert("Error: " + error.message); btn.innerText = "Post"; btn.disabled = false; }
-        });
-    }
-
     function setupCommonUI() {
         const sidebarUser = document.getElementById('sidebarUser');
         if (currentPublicUser && sidebarUser) {
-            const initial = currentPublicUser.name ? currentPublicUser.name.charAt(0).toUpperCase() : 'U';
-            sidebarUser.innerHTML = `<div class="user-avatar-sm" style="background-color:#0f1419; color:white;">${initial}</div><div class="user-meta" style="display:flex; flex-direction:column; margin-left:10px;"><span style="font-weight:700;">${escapeHtml(currentPublicUser.name)}</span><span style="color:#536471; font-size:13px;">@${escapeHtml(currentPublicUser.user_name)}</span></div>`;
+            const avatarHTML = getAvatarHTML(currentPublicUser);
+            
+            sidebarUser.innerHTML = `<div style="width:40px; height:40px;">${avatarHTML}</div><div class="user-meta" style="display:flex; flex-direction:column; margin-left:10px;"><span style="font-weight:700;">${escapeHtml(currentPublicUser.name)}</span><span style="color:#536471; font-size:13px;">@${escapeHtml(currentPublicUser.user_name)}</span></div>`;
+            
             let menu = document.getElementById('userPopupMenu');
             if(!menu) { menu = document.createElement('div'); menu.className = 'user-popup-menu'; menu.id = 'userPopupMenu'; sidebarUser.parentNode.appendChild(menu); }
             menu.innerHTML = `<div class="menu-item" id="logoutTrigger">Log out @${escapeHtml(currentPublicUser.user_name)}</div>`;
@@ -759,225 +1057,41 @@ document.addEventListener('DOMContentLoaded', async () => {
     function setupAuthForms() {
         const f = document.getElementById('loginForm');
         if(f) f.onsubmit = async (e) => {
-            e.preventDefault();
-            const {error} = await supabase.auth.signInWithPassword({ email: document.getElementById('email').value, password: document.getElementById('password').value });
+            e.preventDefault(); const {error} = await supabase.auth.signInWithPassword({ email: document.getElementById('email').value, password: document.getElementById('password').value });
             if(error) alert(error.message); else window.location.href='home.html';
         }
         const sf = document.getElementById('signupForm');
         if (sf) sf.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const { data, error } = await supabase.auth.signUp({ email: document.getElementById('signupEmail').value, password: document.getElementById('signupPassword').value });
+            e.preventDefault(); const { data, error } = await supabase.auth.signUp({ email: document.getElementById('signupEmail').value, password: document.getElementById('signupPassword').value });
             if (error) { alert(error.message); return; }
             if (data.user) { await supabase.from('User').insert([{ user_name: document.getElementById('signupUsername').value, name: document.getElementById('signupName').value, email: document.getElementById('signupEmail').value, auth_id: data.user.id, user_type: 'Student' }]); window.location.href = 'home.html'; }
         });
     }
 
-// ==========================================
-    //  FEATURE: JOBS (Fixed with Popup)
-    // ==========================================
-    async function initJobPostPage() {
-        if (!currentPublicUser) { window.location.href = 'index.html'; return; }
-        
-        // Modal Logic
-        const modal = document.getElementById('jobPostModal');
-        const openBtn = document.getElementById('sidebarPostBtn');
-        const closeBtn = document.getElementById('closeJobModal');
-        const submitBtn = document.getElementById('submitJobBtn');
-
-        // Open/Close
-        openBtn.onclick = () => modal.style.display = 'block';
-        closeBtn.onclick = () => modal.style.display = 'none';
-        window.onclick = (e) => { if(e.target == modal) modal.style.display = 'none'; };
-
-        // Submit Logic
-        submitBtn.onclick = async () => {
-            const title = document.getElementById('inputJobTitle').value; 
-            const company = document.getElementById('inputJobCompany').value; 
-            const location = document.getElementById('inputJobLocation').value; 
-            const type = document.getElementById('inputJobType').value; 
-            const desc = document.getElementById('inputJobDesc').value;
-            
-            if(!title || !company) { alert("Please fill in Job Title and Company."); return; }
-            
-            submitBtn.innerText = "Posting..."; submitBtn.disabled = true;
-            
-            // Combine extra fields into description for now, or save them if you added columns
-            const fullDesc = `${type} | ${location}\n\n${desc}`;
-
-            const { error } = await supabase.from('jobs').insert([{ 
-                title: title, 
-                company: company, 
-                description: fullDesc, 
-                posted_by: currentPublicUser.user_id 
-            }]);
-            
-            if (error) { 
-                alert("Error: " + error.message); 
-            } else { 
-                modal.style.display = 'none';
-                
-                // Show Success Popup
-                const successPopup = document.getElementById('successPopup');
-                if(successPopup) {
-                    successPopup.querySelector('h3').innerText = "Job Posted!";
-                    successPopup.querySelector('p').innerText = "Your job listing is now live.";
-                    successPopup.classList.add('show');
-                }
-                
-                // Clear & Refresh
-                document.getElementById('inputJobTitle').value = '';
-                document.getElementById('inputJobCompany').value = '';
-                document.getElementById('inputJobDesc').value = '';
-                fetchJobs(); 
-            }
-            submitBtn.innerText = "Post Opportunity"; submitBtn.disabled = false;
-        };
-
-        fetchJobs();
-    }
-
-    async function fetchJobs() {
-        const container = document.getElementById('jobsContainer');
-        if(!container) return;
-        
-        const { data: jobs, error } = await supabase.from('jobs').select('*, User:posted_by(name)').order('created_at', { ascending: false });
-        
-        if(error) { container.innerHTML = 'Error loading jobs.'; return; }
-        
-        container.innerHTML = '';
-        if(!jobs || jobs.length === 0) { container.innerHTML = '<div class="no-posts-message">No jobs posted yet.</div>'; return; }
-
-        jobs.forEach(job => {
-            const date = new Date(job.created_at).toLocaleDateString();
-            const posterName = job.User?.name || "Unknown";
-            
-            container.innerHTML += `
-            <div class="post" style="cursor: default;">
-                <div style="width: 50px; height: 50px; background:#f7f9f9; border-radius:8px; display:flex; align-items:center; justify-content:center; margin-right:15px; font-size:24px;">
-                    💼
-                </div>
-                <div style="flex:1;">
-                    <div style="font-size:13px; color:#536471; margin-bottom:5px;">Posted by ${escapeHtml(posterName)} · ${date}</div>
-                    <h3 style="margin:0; font-size:18px;">${escapeHtml(job.title)}</h3>
-                    <div style="font-weight:bold; color:#1d9bf0; margin-bottom:8px;">${escapeHtml(job.company)}</div>
-                    <p style="font-size:15px; color:#0f1419; white-space:pre-wrap;">${escapeHtml(job.description)}</p>
-                    <button class="btn-action" style="margin-top:10px; border:1px solid #cfd9de; background:white;">Apply Now</button>
-                </div>
-            </div>`;
-        });
-    }
-
-// ==========================================
-    //  FEATURE: EVENTS
-    // ==========================================
-    async function initEventPostPage() {
-        if (!currentPublicUser) { window.location.href = 'index.html'; return; }
-        
-        console.log("📅 Initializing Event Page...");
-
-        // 1. Get Elements
-        const modal = document.getElementById('eventPostModal');
-        const openBtn = document.getElementById('sidebarPostBtn');
-        const closeBtn = document.getElementById('closeEventModal');
-        const submitBtn = document.getElementById('submitEventBtn');
-
-        // 2. Safety Check (Debug if missing)
-        if (!modal) console.error("❌ Error: Missing 'eventPostModal' in HTML");
-        if (!openBtn) console.error("❌ Error: Missing 'sidebarPostBtn' in HTML");
-        if (!closeBtn) console.error("❌ Error: Missing 'closeEventModal' in HTML");
-        if (!submitBtn) console.error("❌ Error: Missing 'submitEventBtn' in HTML");
-
-        if (modal && openBtn && closeBtn && submitBtn) {
-            // Open/Close Logic
-            openBtn.onclick = () => modal.style.display = 'block';
-            closeBtn.onclick = () => modal.style.display = 'none';
-            window.onclick = (e) => { if(e.target == modal) modal.style.display = 'none'; };
-
-            // Submit Logic
-            submitBtn.onclick = async () => {
-                const title = document.getElementById('inputEventTitle').value; 
-                const date = document.getElementById('inputEventDate').value; 
-                const time = document.getElementById('inputEventTime').value; 
-                const location = document.getElementById('inputEventLocation').value; 
-                const desc = document.getElementById('inputEventDesc').value;
-                
-                if(!title || !date || !location) { alert("Please fill in Title, Date, and Location."); return; }
-                
-                submitBtn.innerText = "Publishing..."; submitBtn.disabled = true;
-                
-                const fullDesc = `📅 ${date} at ${time}\n📍 ${location}\n\n${desc}`;
-
-                const { error } = await supabase.from('events').insert([{ 
-                    title: title, 
-                    location: location, 
-                    description: fullDesc, 
-                    posted_by: currentPublicUser.user_id 
-                }]);
-                
-                if (error) { 
-                    alert("Error: " + error.message); 
-                } else { 
-                    modal.style.display = 'none';
-                    // Show Success
-                    const successPopup = document.getElementById('successPopup');
-                    if(successPopup) {
-                        successPopup.querySelector('h3').innerText = "Event Created!";
-                        successPopup.querySelector('p').innerText = "It is now visible to everyone.";
-                        successPopup.classList.add('show');
-                    }
-                    // Clear inputs
-                    document.getElementById('inputEventTitle').value = '';
-                    document.getElementById('inputEventLocation').value = '';
-                    document.getElementById('inputEventDesc').value = '';
-                    fetchEvents();
-                }
-                submitBtn.innerText = "Publish Event"; submitBtn.disabled = false;
-            };
-        }
-
-        // 3. Load Events
-        fetchEvents();
-    }
-
-    async function fetchEvents() {
-        const container = document.getElementById('eventsContainer');
-        if(!container) return;
-        
-        container.innerHTML = `<div style="text-align:center; padding:40px; color:#536471;"><i class='bx bx-loader-alt bx-spin' style="font-size: 24px;"></i><br>Loading events...</div>`;
-        
-        const { data: events, error } = await supabase.from('events').select('*, User:posted_by(name)').order('created_at', { ascending: false });
-        
-        if(error) { 
-            console.error("Fetch Error:", error);
-            container.innerHTML = '<div style="padding:20px; text-align:center; color:red;">Error loading events. Check Console.</div>'; 
-            return; 
-        }
-        
-        container.innerHTML = '';
-        if(!events || events.length === 0) { container.innerHTML = '<div class="no-posts-message">No upcoming events.</div>'; return; }
-
-        events.forEach(event => {
-            const date = new Date(event.created_at).toLocaleDateString();
-            const hostName = event.User?.name || "Unknown";
-            
-            container.innerHTML += `
-            <div class="post" style="cursor: default;">
-                <div style="width: 50px; height: 50px; background:#e8f5fd; color:#1d9bf0; border-radius:12px; display:flex; flex-direction:column; align-items:center; justify-content:center; margin-right:15px; font-weight:bold;">
-                    <i class='bx bx-calendar'></i>
-                </div>
-                <div style="flex:1;">
-                    <div style="font-size:13px; color:#536471; margin-bottom:5px;">Hosted by ${escapeHtml(hostName)}</div>
-                    <h3 style="margin:0; font-size:18px;">${escapeHtml(event.title)}</h3>
-                    <div style="color:#536471; font-size:14px; margin-bottom:8px;">
-                        <i class='bx bx-map'></i> ${escapeHtml(event.location)}
-                    </div>
-                    <p style="font-size:15px; color:#0f1419; white-space:pre-wrap;">${escapeHtml(event.description)}</p>
-                    <button class="btn-action" style="margin-top:10px; background:#0f1419; color:white;">RSVP</button>
-                </div>
-            </div>`;
-        });
-    }
-
     function setupPasswordToggle() { const t = document.getElementById('togglePassword'); if(t) t.onclick = () => { const i = document.getElementById('password'); i.type = i.type === 'password' ? 'text' : 'password'; t.innerText = i.type === 'password' ? 'Show' : 'Hide'; } }
+    
+    window.toggleLike = async (btn, postId) => {
+        if(!currentPublicUser) return alert("Sign in to like");
+        const icon = btn.querySelector('i'); const isLiked = btn.classList.contains('liked');
+        if(isLiked) { btn.classList.remove('liked'); icon.className = 'bx bx-heart'; await supabase.from('likes').delete().match({ user_id: currentPublicUser.user_id, post_id: postId }); } 
+        else { btn.classList.add('liked'); icon.className = 'bx bxs-heart'; await supabase.from('likes').insert([{ user_id: currentPublicUser.user_id, post_id: postId }]); }
+    };
+
+    window.toggleBookmark = async (btn, postId) => {
+        if(!currentPublicUser) return alert("Sign in to bookmark");
+        const icon = btn.querySelector('i'); const textSpan = btn.querySelector('span'); const isSaved = btn.classList.contains('bookmarked');
+        if(isSaved) { btn.classList.remove('bookmarked'); icon.className = 'bx bx-bookmark'; textSpan.innerText = 'Save'; await supabase.from('bookmarks').delete().match({ user_id: currentPublicUser.user_id, post_id: postId }); } 
+        else { btn.classList.add('bookmarked'); icon.className = 'bx bxs-bookmark'; textSpan.innerText = 'Saved'; await supabase.from('bookmarks').insert([{ user_id: currentPublicUser.user_id, post_id: postId }]); }
+    };
+
     function escapeHtml(text) { if(!text) return ""; return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;"); }
+
+    window.previewFile = function(input, previewId) {
+    const file = input.files[0];
+    if(file) {
+        const preview = document.getElementById(previewId);
+        preview.src = URL.createObjectURL(file);
+        preview.style.display = 'block'; // Show the image over the box
+    }
+};
 });

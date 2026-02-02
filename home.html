@@ -10,21 +10,34 @@
 <body>
 
 <div id="postModal" class="modal">
-    <div class="modal-content">
-        <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+    <div class="modal-content" style="max-width: 600px; border-radius: 16px;">
+        <div class="modal-header">
+            <span>Create Post</span>
             <span class="close-modal">&times;</span>
         </div>
-        <div class="composer-container" style="border: none; padding: 0;">
+        
+        <div style="display: flex; gap: 12px;">
             <div class="user-avatar-sm current-user-avatar">U</div>
             <div style="flex: 1;">
-                <textarea id="modalInput" class="composer-textarea" placeholder="What's happening?" rows="3"></textarea>
-                <div class="composer-actions">
-                     <div class="icon-row">
-                        <i class='bx bx-image-alt'></i>
-                    </div>
-                    <button id="modalPostBtn" class="post-submit-btn">Post</button>
+                <textarea id="modalInput" class="composer-area" placeholder="What do you want to talk about?" rows="4"></textarea>
+                
+                <div id="mediaPreviewContainer" class="image-preview-container" style="display:none;">
+                    <img id="imagePreview" class="image-preview" src="" style="display:none;">
+                    <video id="videoPreview" class="image-preview" controls style="display:none;"></video>
+                    <div id="removeMediaBtn" class="remove-image-btn"><i class='bx bx-x'></i></div>
                 </div>
             </div>
+        </div>
+
+        <div class="modal-footer">
+            <div class="modal-tools">
+                <input type="file" id="postImageInput" accept="image/*" style="display: none;">
+                <input type="file" id="postVideoInput" accept="video/*" style="display: none;">
+                
+                <i class='bx bx-image-alt tool-icon' title="Photo" onclick="document.getElementById('postImageInput').click()"></i>
+                <i class='bx bx-video tool-icon' title="Video" onclick="document.getElementById('postVideoInput').click()"></i>
+            </div>
+            <button id="modalPostBtn" class="post-submit-btn">Post</button>
         </div>
     </div>
 </div>
@@ -89,7 +102,12 @@
         </div>
     </main>
 
-    <aside class="right-sidebar">
-        <div class="search-box">
+<aside class="right-sidebar">
+    <div class="search-box">
+        <i class='bx bx-search'></i>
+        <input type="text" placeholder="Search">
+    </div>
+    <div id="sidebarSearchResults" class="search-results-dropdown"></div>
+</aside>
 
     <script type="module" src="script.js"></script>

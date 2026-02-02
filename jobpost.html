@@ -15,7 +15,7 @@
             <div class="nav-link" style="width: 50px; height: 50px; justify-content: center;">
                  <i class='bx bxs-network-chart' style="font-size: 30px;"></i>
             </div>
-          <nav>
+            <nav>
                 <a href="home.html" class="nav-link"><i class='bx bxs-home-circle'></i> <span>Home</span></a>
                 <a href="connect.html" class="nav-link"><i class='bx bx-search'></i> <span>Connect</span></a>
                 <a href="mentor.html" class="nav-link"><i class='bx bx-group'></i> <span>Mentorship</span></a>
@@ -43,7 +43,6 @@
         <div class="feed-header">
             <span class="feed-title">Career Opportunities</span>
         </div>
-
         <div id="jobsContainer">
             <div style="text-align:center; padding:40px; color:#536471;">
                 <i class='bx bx-loader-alt bx-spin' style="font-size: 24px;"></i><br>Loading jobs...
@@ -56,12 +55,6 @@
             <i class='bx bx-search'></i>
             <input type="text" placeholder="Search Jobs">
         </div>
-        <div style="background: #f7f9f9; border-radius: 16px; padding: 15px; margin-top: 20px;">
-            <h3 style="font-size: 18px; font-weight: 800; margin-bottom: 10px;">Job Tips</h3>
-            <p style="font-size: 14px; line-height: 1.5; color: #536471;">
-                Clear job descriptions with salary ranges attract 40% more applicants.
-            </p>
-        </div>
     </aside>
 </div>
 
@@ -73,51 +66,58 @@
         </div>
         
         <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-            <div>
-                <label>Job Title</label>
-                <input type="text" id="inputJobTitle" class="modal-input" placeholder="e.g. Software Engineer">
-            </div>
-            <div>
-                <label>Company</label>
-                <input type="text" id="inputJobCompany" class="modal-input" placeholder="e.g. Tech Corp">
-            </div>
+            <div><label>Job Title</label><input type="text" id="inputJobTitle" class="modal-input" placeholder="e.g. Software Engineer"></div>
+            <div><label>Company</label><input type="text" id="inputJobCompany" class="modal-input" placeholder="e.g. Tech Corp"></div>
         </div>
-
         <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-            <div>
-                <label>Location</label>
-                <input type="text" id="inputJobLocation" class="modal-input" placeholder="e.g. Remote / New York">
-            </div>
-            <div>
-                <label>Job Type</label>
-                <select id="inputJobType" class="modal-input" style="background:white;">
-                    <option value="Full-time">Full-time</option>
-                    <option value="Part-time">Part-time</option>
-                    <option value="Internship">Internship</option>
-                    <option value="Contract">Contract</option>
-                </select>
-            </div>
+            <div><label>Location</label><input type="text" id="inputJobLocation" class="modal-input" placeholder="e.g. Remote / New York"></div>
+            <div><label>Job Type</label><select id="inputJobType" class="modal-input" style="background:white;"><option value="Full-time">Full-time</option><option value="Part-time">Part-time</option><option value="Internship">Internship</option></select></div>
         </div>
+        <div class="form-group"><label>Description</label><textarea id="inputJobDesc" rows="5" class="modal-input" placeholder="Describe the role..."></textarea></div>
+        <div style="text-align: right; margin-top: 20px;"><button id="submitJobBtn" class="save-profile-btn">Post Opportunity</button></div>
+    </div>
+</div>
+
+<div id="applyJobModal" class="modal">
+    <div class="modal-content" style="max-width: 500px; border-radius: 16px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+            <h2 style="font-size:20px; margin:0;">Apply Now</h2>
+            <span class="close-modal" id="closeApplyModal">&times;</span>
+        </div>
+        
+        <p style="color:#536471; font-size:14px; margin-bottom:20px;">
+            Applying for <strong id="applyJobTitleDisplay" style="color:#0f1419;">Job Title</strong> at <span id="applyJobCompanyDisplay">Company</span>.
+        </p>
 
         <div class="form-group">
-            <label>Description & Requirements</label>
-            <textarea id="inputJobDesc" rows="5" class="modal-input" placeholder="Describe the role, requirements, and how to apply..." style="resize:none;"></textarea>
+            <label>Full Name</label>
+            <input type="text" id="applyName" class="modal-input">
+        </div>
+        <div class="form-group">
+            <label>Email Address</label>
+            <input type="email" id="applyEmail" class="modal-input">
+        </div>
+        <div class="form-group">
+            <label>Link to Portfolio / LinkedIn</label>
+            <input type="text" id="applyLink" class="modal-input" placeholder="https://...">
+        </div>
+        <div class="form-group">
+            <label>Short Note (Optional)</label>
+            <textarea id="applyNote" rows="3" class="modal-input" placeholder="Why are you a good fit?"></textarea>
         </div>
 
         <div style="text-align: right; margin-top: 20px;">
-            <button id="submitJobBtn" class="save-profile-btn">Post Opportunity</button>
+            <button id="confirmApplyBtn" class="save-profile-btn" style="background-color: #0f1419;">Submit Application</button>
         </div>
     </div>
 </div>
 
 <div id="successPopup" class="custom-popup">
     <div class="popup-content">
-        <div class="popup-icon" style="background:#d1fae5; color:#059669;">
-            <i class='bx bx-check'></i>
-        </div>
+        <div class="popup-icon" style="background:#d1fae5; color:#059669;"><i class='bx bx-check'></i></div>
         <h3 id="successTitle">Success!</h3>
-        <p id="successMessage">Your post is live.</p>
-        <button onclick="document.getElementById('successPopup').classList.remove('show')">Awesome</button>
+        <p id="successMessage">Action completed.</p>
+        <button onclick="document.getElementById('successPopup').classList.remove('show')">Great</button>
     </div>
 </div>
 
