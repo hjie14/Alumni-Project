@@ -64,9 +64,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         initJobPostPage();
     } else if (path.includes('event.html') || path.includes('events.html')) {
         initEventPostPage();
-    } else if (path.includes('feedback.html')) {
-        setupFeedbackSubmission();
-    }
+    } 
 
 function getAvatarHTML(user, size='sm') {
         let avatarUrl = null;
