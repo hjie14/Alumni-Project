@@ -64,6 +64,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         initJobPostPage();
     } else if (path.includes('event.html') || path.includes('events.html')) {
         initEventPostPage();
+    } else if (path.includes('feedback.html')) {
+        setupFeedbackSubmission();
     }
 
 function getAvatarHTML(user, size='sm') {
@@ -308,6 +310,51 @@ function setupCreatePostLogic() {
                 }
             };
         }
+    }
+
+// ==========================================
+    //  FEATURE: FEEDBACK IMPLEMENTATION
+    // ==========================================
+    async function setupFeedbackSubmission() {
+        const submitBtn = document.getElementById('submitFeedbackBtn');
+        const feedbackInput = document.getElementById('feedbackText');
+
+        if (!submitBtn || !feedbackInput) return;
+
+        submitBtn.onclick = async () => {
+            const messageText = feedbackInput.value.trim();
+
+            if (!messageText) {
+                alert("Please enter your feedback before submitting.");
+                return;
+            }
+
+            if (!currentPublicUser) {
+                alert("Session error. Please log in again.");
+                return;
+            }
+
+            submitBtn.innerText = "Sending...";
+            submitBtn.disabled = true;
+
+            const { error } = await supabase.from('feedback').insert([{
+                user_id: currentPublicUser.user_id,
+                message: messageText,           // Column added per database query
+                feedback_type: 'General',        // Enum type
+                is_highlighted: 0                // Default state
+            }]);
+
+            if (error) {
+                console.error("DB Error:", error.message);
+                alert("Failed to save feedback: " + error.message);
+            } else {
+                alert("Feedback successfully stored in database!");
+                feedbackInput.value = '';
+            }
+            
+            submitBtn.innerText = "Submit Feedback";
+            submitBtn.disabled = false;
+        };
     }
 
 // --- MISSING FUNCTION RESTORED ---
