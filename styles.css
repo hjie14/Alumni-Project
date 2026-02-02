@@ -976,3 +976,52 @@ button { cursor: pointer; border: none; outline: none; background: none; }
 .modal-btn-danger:hover {
     background-color: #c82333; /* Darker Red */
 }
+
+/* For Job and Event Post */
+
+
+/* Layout container to hold sidebar and main content side-by-side */
+.ejlayout {
+    display: flex; /* Aligns sidebar and auth-card horizontally */
+    min-height: 100vh;
+    background-color: #ffffff; /* Matching your dark theme */
+}
+
+/* Sidebar styling */
+.ejsidebar {
+    width: 260px; /* Standard sidebar width */
+    height: 100vh;
+    position: sticky; /* Keeps sidebar fixed while scrolling content */
+    top: 0;
+    border-right: 1px solid #333;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+/* Centering the event card in the remaining space */
+.ejauth-card {
+    flex: 1; /* Takes up all remaining width */
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Centers items horizontally inside the card */
+    justify-content: center; /* Centers card content vertically if desired */
+    padding: 40px;
+    max-width: 600px; /* Keeps the form from getting too wide */
+    margin: 0 auto; /* Centers the card within the flex container */
+}
+
+/* Ensuring form elements stay neat and full-width within the card */
+.ejauth-card input, 
+.ejauth-card textarea {
+    width: 100%;
+    max-width: 500px;
+    margin-bottom: 15px;
+    /* Add styling to match your dark theme */
+    background: white;
+    color: black;
+    border: 1px solid black;
+    padding: 10px;
+    border-radius: 4px;
+}
