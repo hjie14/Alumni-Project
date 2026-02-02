@@ -69,6 +69,30 @@
     </div>
 </div>
 
+<div id="deleteNotifModal" class="modal" style="backdrop-filter: blur(4px); background-color: rgba(0,0,0,0.4);">
+    <div class="modal-content modern-modal">
+        
+        <div class="modal-icon-bubble decline" style="background-color: #fee2e2; color: #ef4444; box-shadow: 0 0 0 8px #fef2f2;">
+            <i class='bx bx-trash'></i>
+        </div>
+
+        <h2 class="modal-title">Delete Notification?</h2>
+        
+        <p class="modal-desc">
+            This will permanently remove this notification from your history.
+        </p>
+
+        <div class="modal-actions">
+            <button id="closeDelNotifModal" class="btn-cancel">
+                Cancel
+            </button>
+            <button id="confirmDelNotifBtn" class="btn-confirm-decline" style="background-color: #f4212e; box-shadow: 0 4px 12px rgba(244, 33, 46, 0.25);">
+                Delete
+            </button>
+        </div>
+    </div>
+</div>
+
 <script type="module" src="script.js"></script>
 </body>
 </html>

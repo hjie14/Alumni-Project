@@ -1305,7 +1305,7 @@ window.updateMentorStatus = async function(id, newStatus, senderId) {
     }
 
 // ==========================================
-    //  FEATURE: NOTIFICATIONS (Final Fixed Version)
+    //  FEATURE: NOTIFICATIONS (With Custom Delete Modal)
     // ==========================================
     async function setupNotificationsPage() { 
         const container = document.getElementById("notificationsContainer");
@@ -1313,24 +1313,10 @@ window.updateMentorStatus = async function(id, newStatus, senderId) {
 
         container.innerHTML = `<div style="text-align:center; padding:40px; color:#536471;"><i class='bx bx-loader-alt bx-spin' style="font-size:28px;"></i><br>Checking updates...</div>`;
         
-        const { data: notifs } = await supabase
-            .from("notification")
-            .select("*")
-            .eq("user_id", currentPublicUser.user_id)
-            .order("created_at", {ascending:false});
+        const { data: notifs } = await supabase.from("notification").select("*").eq("user_id", currentPublicUser.user_id).order("created_at", {ascending:false});
         
         container.innerHTML = ''; 
-        
-        if(!notifs || notifs.length === 0) { 
-            container.innerHTML = `
-                <div style="display:flex; flex-direction:column; align-items:center; padding:60px 20px; text-align:center;">
-                    <div style="width:60px; height:60px; background:#f3f4f6; border-radius:50%; display:flex; align-items:center; justify-content:center; margin-bottom:15px;">
-                        <i class='bx bx-bell-off' style="font-size:30px; color:#9ca3af;"></i>
-                    </div>
-                    <h3 style="margin:0; font-size:18px; color:#0f1419;">No notifications yet</h3>
-                </div>`; 
-            return; 
-        }
+        if(!notifs || notifs.length === 0) { container.innerHTML = `<div style="text-align:center; padding:40px; color:#536471;">No notifications yet</div>`; return; }
         
         const listDiv = document.createElement('div');
         listDiv.className = 'notification-list';
@@ -1339,75 +1325,73 @@ window.updateMentorStatus = async function(id, newStatus, senderId) {
              const msg = n.message; 
              const rawText = typeof msg === 'string' ? msg : (msg.text || "New Notification"); 
              const actionText = (typeof msg === 'object' && msg.action) ? msg.action : '';
-             const isUnread = !n.read_status; // true if unread
-             
-             // --- ICON & LINK LOGIC ---
-             let typeClass = 'notif-type-general';
-             let iconClass = 'bx-bell';
-             let targetLink = '#';
-             
+             const isUnread = !n.read_status;
+
+             // Icon Logic
+             let typeClass = 'notif-type-general'; let iconClass = 'bx-bell'; let targetLink = '#';
              const type = (msg.type || "").toLowerCase();
              if(type.includes('job')) { typeClass = 'notif-type-job'; iconClass = 'bx-briefcase'; targetLink = 'jobpost.html'; }
              else if(type.includes('event')) { typeClass = 'notif-type-event'; iconClass = 'bx-calendar-event'; targetLink = 'events.html'; }
              else if(type.includes('mentorship')) { typeClass = 'notif-type-mentor'; iconClass = 'bx-group'; targetLink = 'mentor.html'; }
 
-             // --- BUILD CARD ---
              const card = document.createElement('div'); 
-             // Add 'unread' class if status is false
              card.className = `notification-card ${isUnread ? 'unread' : 'read'}`;
              card.id = `notif-${n.id}`;
 
-             // 1. CLICK CARD (View & Mark Read)
+             // 1. CLICK TO VIEW
              card.onclick = async () => {
-                 // Visual update immediately
-                 card.classList.remove('unread');
-                 card.classList.add('read');
-
-                 // Update Database
+                 card.classList.remove('unread'); card.classList.add('read');
                  await supabase.from('notification').update({ read_status: true }).eq('id', n.id);
-
-                 // Redirect
                  if(targetLink !== '#') window.location.href = targetLink;
              };
 
              card.innerHTML = `
-                <div class="notif-icon-box ${typeClass}">
-                    <i class='bx ${iconClass}'></i>
-                </div>
+                <div class="notif-icon-box ${typeClass}"><i class='bx ${iconClass}'></i></div>
                 <div class="notif-content">
                     <div class="notif-text">${escapeHtml(rawText)}</div>
                     ${actionText ? `<div class="notif-action-link">${escapeHtml(actionText)} <i class='bx bx-chevron-right'></i></div>` : ''}
                     <div class="notif-time">${getTimeAgo(new Date(n.created_at))}</div>
                 </div>
                 ${isUnread ? '<div class="unread-dot"></div>' : ''}
-                
-                <button class="btn-delete-notif" title="Delete Notification">
-                    <i class='bx bx-trash'></i>
-                </button>
+                <button class="btn-delete-notif" title="Delete Notification"><i class='bx bx-trash'></i></button>
              `;
              
-             // 2. CLICK TRASH (Delete Logic)
+             // 2. CLICK TO DELETE (New Logic)
              const deleteBtn = card.querySelector('.btn-delete-notif');
              if(deleteBtn) {
-                 deleteBtn.onclick = async (e) => {
-                     e.stopPropagation(); // Stop the card click (don't redirect)
-                     
-                     if(!confirm("Delete this notification?")) return;
-
-                     // Visual remove
-                     card.style.opacity = '0';
-                     setTimeout(() => card.remove(), 300);
-
-                     // DB remove
-                     await supabase.from('notification').delete().eq('id', n.id);
+                 deleteBtn.onclick = (e) => {
+                     e.stopPropagation(); // Stop redirection
+                     window.openDeleteNotifModal(n.id, card);
                  };
              }
-             
              listDiv.appendChild(card);
         });
-
         container.appendChild(listDiv);
     }
+
+    // --- NEW: Global Helper for Delete Notification ---
+    window.openDeleteNotifModal = (notifId, cardElement) => {
+        const m = document.getElementById('deleteNotifModal');
+        if(m) {
+            m.style.display = 'block';
+            document.getElementById('closeDelNotifModal').onclick = () => m.style.display = 'none';
+            
+            const btn = document.getElementById('confirmDelNotifBtn');
+            btn.onclick = null;
+            btn.onclick = async () => {
+                btn.innerText = "Deleting...";
+                await supabase.from('notification').delete().eq('id', notifId);
+                
+                // Animate removal
+                m.style.display = 'none';
+                btn.innerText = "Delete";
+                if(cardElement) {
+                    cardElement.style.opacity = '0';
+                    setTimeout(() => cardElement.remove(), 300);
+                }
+            };
+        }
+    };
 
     // Helper: Time Ago (e.g., "5m ago")
     function getTimeAgo(date) {
@@ -1708,4 +1692,36 @@ function setupAuthForms() {
             };
         }
     };
+
+// ==========================================
+    //  GLOBAL: SIDEBAR POST BUTTON LOGIC
+    // ==========================================
+    const sidebarPostBtn = document.getElementById('sidebarPostBtn');
+    
+    if (sidebarPostBtn) {
+        sidebarPostBtn.onclick = () => {
+            const currentPath = window.location.pathname;
+
+            // CONDITION 1: ARE WE ON THE PROFILE PAGE?
+            if (currentPath.includes('profile.html')) {
+                // Redirect to Home with a "signal" to open the box
+                window.location.href = 'home.html?open_post=true';
+            } 
+            
+            // CONDITION 2: ALL OTHER PAGES (Home, Jobs, Connect, etc.)
+            else {
+                // Try to find the modal on the current page
+                const modal = document.getElementById('postModal');
+                
+                if (modal) {
+                    // Open it immediately
+                    modal.style.display = 'block';
+                } else {
+                    // Fallback: If you forgot to add the Modal HTML to this specific page, 
+                    // we redirect to home so the button doesn't appear broken.
+                    window.location.href = 'home.html?open_post=true';
+                }
+            }
+        };
+    }
 });
