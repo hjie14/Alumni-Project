@@ -373,12 +373,11 @@ async function renderPosts(posts, container) {
     }
 
 // ==========================================
-    //  FEATURE: JOBS & APPLICATION
+    //  FEATURE: JOBS & APPLICATIONS (Fixed)
     // ==========================================
     async function initJobPostPage() {
         if (!currentPublicUser) { window.location.href = 'index.html'; return; }
         
-        // --- POSTING LOGIC ---
         const modal = document.getElementById('jobPostModal');
         const openBtn = document.getElementById('sidebarPostBtn');
         const closeBtn = document.getElementById('closeJobModal');
@@ -386,85 +385,78 @@ async function renderPosts(posts, container) {
 
         if(openBtn) openBtn.onclick = () => modal.style.display = 'block';
         if(closeBtn) closeBtn.onclick = () => modal.style.display = 'none';
+        
         window.onclick = (e) => { 
             if(e.target == modal) modal.style.display = 'none'; 
             if(e.target == document.getElementById('applyJobModal')) document.getElementById('applyJobModal').style.display = 'none';
+            if(e.target == document.getElementById('cancelJobModal')) document.getElementById('cancelJobModal').style.display = 'none';
+            if(e.target == document.getElementById('successModal')) document.getElementById('successModal').style.display = 'none';
         };
 
         if(submitBtn) {
             submitBtn.onclick = async () => {
                 const title = document.getElementById('inputJobTitle').value; 
                 const company = document.getElementById('inputJobCompany').value; 
-                const location = document.getElementById('inputJobLocation').value; 
-                const type = document.getElementById('inputJobType').value; 
                 const desc = document.getElementById('inputJobDesc').value;
+                if(!title) return;
                 
-                if(!title || !company) { alert("Please fill in Job Title and Company."); return; }
-                
-                submitBtn.innerText = "Posting..."; submitBtn.disabled = true;
-                const fullDesc = `${type} | ${location}\n\n${desc}`;
-
-                const { error } = await supabase.from('jobs').insert([{ title: title, company: company, description: fullDesc, posted_by: currentPublicUser.user_id }]);
-                
-                if (error) { alert("Error: " + error.message); } 
-                else { 
-                    modal.style.display = 'none';
-                    showSuccess("Job Posted!", "Your listing is now live.");
-                    fetchJobs(); 
-                }
-                submitBtn.innerText = "Post Opportunity"; submitBtn.disabled = false;
+                await supabase.from('jobs').insert([{ title: title, company: company, description: desc, posted_by: currentPublicUser.user_id }]);
+                modal.style.display = 'none'; 
+                showSuccessModal("Job Posted", "Your listing is live.");
+                fetchJobs();
             };
         }
 
-        // --- APPLICATION LOGIC ---
-        const applyModal = document.getElementById('applyJobModal');
-        const closeApply = document.getElementById('closeApplyModal');
-        const confirmApply = document.getElementById('confirmApplyBtn');
-        let currentJobId = null;
+        // Apply Modal Logic
+        window.openApplyModal = (id, title, comp) => {
+             const m = document.getElementById('applyJobModal'); 
+             if(m) {
+                 document.getElementById('applyJobTitleDisplay').innerText = title;
+                 document.getElementById('applyJobCompanyDisplay').innerText = comp;
+                 m.style.display = 'block';
+                 document.getElementById('applyName').value = currentPublicUser.name || "";
+                 document.getElementById('applyEmail').value = currentPublicUser.email || "";
 
-        if(closeApply) closeApply.onclick = () => applyModal.style.display = 'none';
+                 document.getElementById('closeApplyModal').onclick = () => m.style.display='none';
+                 const btn = document.getElementById('confirmApplyBtn');
+                 btn.onclick = null; // Clear old listeners
 
-        // Expose function to Window so HTML buttons can call it
-        window.openApplyModal = function(jobId, jobTitle, jobCompany) {
-            currentJobId = jobId;
-            document.getElementById('applyJobTitleDisplay').innerText = jobTitle;
-            document.getElementById('applyJobCompanyDisplay').innerText = jobCompany;
-            
-            // Auto-fill details
-            document.getElementById('applyName').value = currentPublicUser.name || "";
-            document.getElementById('applyEmail').value = currentPublicUser.email || "";
-            
-            applyModal.style.display = 'block';
+                 btn.onclick = async () => {
+                     const name = document.getElementById('applyName').value;
+                     const email = document.getElementById('applyEmail').value;
+                     if(!name) return;
+                     
+                     btn.innerText = "Sending...";
+                     await supabase.from('job_applications').insert([{ job_id: id, applicant_id: currentPublicUser.user_id, applicant_name: name, applicant_email: email }]);
+                     
+                     m.style.display='none'; 
+                     btn.innerText = "Submit Application";
+                     showSuccessModal("Applied!", "Good luck!");
+                     fetchJobs(); // <--- REFRESH BUTTONS
+                 };
+             }
         };
 
-        if(confirmApply) {
-            confirmApply.onclick = async () => {
-                const name = document.getElementById('applyName').value;
-                const email = document.getElementById('applyEmail').value;
-                const link = document.getElementById('applyLink').value;
-                const note = document.getElementById('applyNote').value;
+        // Cancel Modal Logic
+        window.openCancelJobModal = (jobId) => {
+            const m = document.getElementById('cancelJobModal');
+            if(m) {
+                m.style.display = 'block';
+                document.getElementById('closeCancelJobModal').onclick = () => m.style.display = 'none';
+                const btn = document.getElementById('confirmCancelJobBtn');
+                btn.onclick = null;
 
-                if(!name || !email) { alert("Name and Email are required."); return; }
-
-                confirmApply.innerText = "Submitting..."; confirmApply.disabled = true;
-
-                const { error } = await supabase.from('job_applications').insert([{
-                    job_id: currentJobId,
-                    applicant_id: currentPublicUser.user_id,
-                    applicant_name: name,
-                    applicant_email: email,
-                    portfolio_link: link,
-                    cover_note: note
-                }]);
-
-                if(error) { alert("Error: " + error.message); }
-                else {
-                    applyModal.style.display = 'none';
-                    showSuccess("Application Sent!", "Good luck!");
-                }
-                confirmApply.innerText = "Submit Application"; confirmApply.disabled = false;
-            };
-        }
+                btn.onclick = async () => {
+                    btn.innerText = "Withdrawing...";
+                    await supabase.from('job_applications').delete().match({ job_id: jobId, applicant_id: currentPublicUser.user_id });
+                    
+                    m.style.display = 'none';
+                    btn.innerText = "Yes, Withdraw";
+                    showSuccessModal("Withdrawn", "Application removed.");
+                    fetchJobs(); // <--- REFRESH BUTTONS
+                };
+            }
+        };
 
         fetchJobs();
     }
@@ -473,20 +465,39 @@ async function fetchJobs() {
         const container = document.getElementById('jobsContainer');
         if(!container) return;
         
-        const { data: jobs, error } = await supabase.from('jobs').select('*, User:posted_by(name)').order('created_at', { ascending: false });
+        // 1. Get Jobs
+        const { data: jobs } = await supabase.from('jobs').select('*, User:posted_by(name)').order('created_at', { ascending: false });
         
-        if(error) { container.innerHTML = 'Error loading jobs.'; return; }
-        
+        // 2. Get My Applications
+        const { data: myApps } = await supabase.from('job_applications').select('job_id').eq('applicant_id', currentPublicUser.user_id);
+        const myJobIds = myApps ? myApps.map(a => a.job_id) : [];
+
         container.innerHTML = '';
         if(!jobs || jobs.length === 0) { container.innerHTML = '<div class="no-posts-message">No jobs posted yet.</div>'; return; }
 
         jobs.forEach(job => {
             const date = new Date(job.created_at).toLocaleDateString();
             const posterName = job.User?.name || "Unknown";
-            
-            // Escape strings for JS function call
             const safeTitle = escapeHtml(job.title).replace(/'/g, "\\'"); 
             const safeCompany = escapeHtml(job.company).replace(/'/g, "\\'");
+
+            // BUTTON STATE LOGIC
+            const hasApplied = myJobIds.includes(job.id);
+            let actionBtn = '';
+            
+            if (hasApplied) {
+                // RED WITHDRAW BUTTON (New Class)
+                actionBtn = `<button class="btn-destructive-action" 
+                    onclick="window.openCancelJobModal(${job.id})">
+                    Withdraw Application
+                </button>`;
+            } else {
+                // BLACK APPLY BUTTON (New Class)
+                actionBtn = `<button class="btn-primary-action" 
+                    onclick="window.openApplyModal(${job.id}, '${safeTitle}', '${safeCompany}')">
+                    Apply Now
+                </button>`;
+            }
 
             container.innerHTML += `
             <div class="post" style="cursor: default;">
@@ -496,24 +507,18 @@ async function fetchJobs() {
                     <h3 style="margin:0; font-size:18px;">${escapeHtml(job.title)}</h3>
                     <div style="font-weight:bold; color:#1d9bf0; margin-bottom:8px;">${escapeHtml(job.company)}</div>
                     <p style="font-size:15px; color:#0f1419; white-space:pre-wrap;">${escapeHtml(job.description)}</p>
-                    
-                    <button class="btn-action" 
-                        style="margin-top:10px; background:#0f1419; color:white; border:none;" 
-                        onclick="window.openApplyModal(${job.id}, '${safeTitle}', '${safeCompany}')">
-                        Apply Now
-                    </button>
+                    ${actionBtn}
                 </div>
             </div>`;
         });
     }
 
 // ==========================================
-    //  FEATURE: EVENTS & RSVP
+    //  FEATURE: EVENTS (Fixed)
     // ==========================================
     async function initEventPostPage() {
         if (!currentPublicUser) { window.location.href = 'index.html'; return; }
         
-        // --- POSTING LOGIC ---
         const modal = document.getElementById('eventPostModal');
         const openBtn = document.getElementById('sidebarPostBtn');
         const closeBtn = document.getElementById('closeEventModal');
@@ -521,81 +526,78 @@ async function fetchJobs() {
 
         if(openBtn) openBtn.onclick = () => modal.style.display = 'block';
         if(closeBtn) closeBtn.onclick = () => modal.style.display = 'none';
+        
         window.onclick = (e) => { 
             if(e.target == modal) modal.style.display = 'none'; 
             if(e.target == document.getElementById('rsvpModal')) document.getElementById('rsvpModal').style.display = 'none';
+            if(e.target == document.getElementById('cancelRsvpModal')) document.getElementById('cancelRsvpModal').style.display = 'none';
+            if(e.target == document.getElementById('successModal')) document.getElementById('successModal').style.display = 'none';
         };
 
         if(submitBtn) {
             submitBtn.onclick = async () => {
                 const title = document.getElementById('inputEventTitle').value; 
-                const date = document.getElementById('inputEventDate').value; 
-                const time = document.getElementById('inputEventTime').value; 
                 const location = document.getElementById('inputEventLocation').value; 
                 const desc = document.getElementById('inputEventDesc').value;
+                if(!title) return;
                 
-                if(!title || !date || !location) { alert("Please fill in required fields."); return; }
-                
-                submitBtn.innerText = "Publishing..."; submitBtn.disabled = true;
-                const fullDesc = `📅 ${date} at ${time}\n📍 ${location}\n\n${desc}`;
-
-                const { error } = await supabase.from('events').insert([{ title: title, location: location, description: fullDesc, posted_by: currentPublicUser.user_id }]);
-                
-                if (error) { alert("Error: " + error.message); } 
-                else { 
-                    modal.style.display = 'none';
-                    showSuccess("Event Created!", "It is now live.");
-                    fetchEvents();
-                }
-                submitBtn.innerText = "Publish Event"; submitBtn.disabled = false;
+                await supabase.from('events').insert([{ title: title, location: location, description: desc, posted_by: currentPublicUser.user_id }]);
+                modal.style.display = 'none'; 
+                showSuccessModal("Event Created", "Your event is live.");
+                fetchEvents();
             };
         }
 
-        // --- RSVP LOGIC ---
-        const rsvpModal = document.getElementById('rsvpModal');
-        const closeRsvp = document.getElementById('closeRsvpModal');
-        const confirmRsvp = document.getElementById('confirmRsvpBtn');
-        let currentEventId = null;
+        // RSVP Logic
+        window.openRsvpModal = (id, title) => {
+            const m = document.getElementById('rsvpModal');
+            if(m) {
+                document.getElementById('rsvpEventTitleDisplay').innerText = title;
+                m.style.display = 'block';
+                document.getElementById('rsvpName').value = currentPublicUser.name || "";
+                document.getElementById('rsvpEmail').value = currentPublicUser.email || "";
 
-        if(closeRsvp) closeRsvp.onclick = () => rsvpModal.style.display = 'none';
+                document.getElementById('closeRsvpModal').onclick = () => m.style.display='none';
+                const btn = document.getElementById('confirmRsvpBtn');
+                btn.onclick = null;
 
-        window.openRsvpModal = function(eventId, eventTitle) {
-            currentEventId = eventId;
-            document.getElementById('rsvpEventTitleDisplay').innerText = eventTitle;
-            
-            // Auto-fill
-            document.getElementById('rsvpName').value = currentPublicUser.name || "";
-            document.getElementById('rsvpEmail').value = currentPublicUser.email || "";
-            
-            rsvpModal.style.display = 'block';
+                btn.onclick = async () => {
+                    const name = document.getElementById('rsvpName').value;
+                    const email = document.getElementById('rsvpEmail').value;
+                    const status = document.getElementById('rsvpStatus').value;
+                    if(!name) return;
+                    
+                    btn.innerText = "Confirming...";
+                    await supabase.from('event_rsvps').insert([{ event_id: id, attendee_id: currentPublicUser.user_id, attendee_name: name, attendee_email: email, status: status }]);
+                    
+                    m.style.display='none';
+                    btn.innerText = "Confirm Seat";
+                    showSuccessModal("RSVP Confirmed!", "You are on the list.");
+                    fetchEvents(); // <--- REFRESH BUTTONS
+                };
+            }
         };
 
-        if(confirmRsvp) {
-            confirmRsvp.onclick = async () => {
-                const name = document.getElementById('rsvpName').value;
-                const email = document.getElementById('rsvpEmail').value;
-                const status = document.getElementById('rsvpStatus').value;
+        // Cancel RSVP Logic
+        window.openCancelRsvpModal = (eventId) => {
+            const m = document.getElementById('cancelRsvpModal');
+            if(m) {
+                m.style.display = 'block';
+                document.getElementById('closeCancelRsvpModal').onclick = () => m.style.display = 'none';
+                const btn = document.getElementById('confirmCancelRsvpBtn');
+                btn.onclick = null;
 
-                if(!name) return;
-
-                confirmRsvp.innerText = "Confirming..."; confirmRsvp.disabled = true;
-
-                const { error } = await supabase.from('event_rsvps').insert([{
-                    event_id: currentEventId,
-                    attendee_id: currentPublicUser.user_id,
-                    attendee_name: name,
-                    attendee_email: email,
-                    status: status
-                }]);
-
-                if(error) { alert("Error: " + error.message); }
-                else {
-                    rsvpModal.style.display = 'none';
-                    showSuccess("RSVP Confirmed!", "See you there.");
-                }
-                confirmRsvp.innerText = "Confirm Seat"; confirmRsvp.disabled = false;
-            };
-        }
+                btn.onclick = async () => {
+                    btn.innerText = "Canceling...";
+                    await supabase.from('event_rsvps').delete().match({ event_id: eventId, attendee_id: currentPublicUser.user_id });
+                    
+                    m.style.display = 'none';
+                    btn.innerText = "Yes, Cancel";
+                    showSuccessModal("Cancelled", "Reservation removed.");
+                    fetchEvents(); // <--- REFRESH BUTTONS
+                };
+            }
+        };
 
         fetchEvents();
     }
@@ -604,17 +606,37 @@ async function fetchEvents() {
         const container = document.getElementById('eventsContainer');
         if(!container) return;
         
-        const { data: events, error } = await supabase.from('events').select('*, User:posted_by(name)').order('created_at', { ascending: false });
+        // 1. Get Events
+        const { data: events } = await supabase.from('events').select('*, User:posted_by(name)').order('created_at', { ascending: false });
         
-        if(error) { container.innerHTML = 'Error loading events.'; return; }
-        
+        // 2. Get My RSVPs
+        const { data: myRsvps } = await supabase.from('event_rsvps').select('event_id').eq('attendee_id', currentPublicUser.user_id);
+        const myEventIds = myRsvps ? myRsvps.map(r => r.event_id) : [];
+
         container.innerHTML = '';
         if(!events || events.length === 0) { container.innerHTML = '<div class="no-posts-message">No upcoming events.</div>'; return; }
 
         events.forEach(event => {
-            const date = new Date(event.created_at).toLocaleDateString();
             const hostName = event.User?.name || "Unknown";
             const safeTitle = escapeHtml(event.title).replace(/'/g, "\\'");
+
+            // BUTTON STATE LOGIC
+            const isGoing = myEventIds.includes(event.id);
+            let actionBtn = '';
+            
+            if (isGoing) {
+                // RED CANCEL BUTTON (New Class)
+                actionBtn = `<button class="btn-destructive-action" 
+                    onclick="window.openCancelRsvpModal(${event.id})">
+                    Cancel Reservation
+                </button>`;
+            } else {
+                // BLACK RSVP BUTTON (New Class)
+                actionBtn = `<button class="btn-primary-action" 
+                    onclick="window.openRsvpModal(${event.id}, '${safeTitle}')">
+                    RSVP
+                </button>`;
+            }
 
             container.innerHTML += `
             <div class="post" style="cursor: default;">
@@ -628,26 +650,23 @@ async function fetchEvents() {
                         <i class='bx bx-map'></i> ${escapeHtml(event.location)}
                     </div>
                     <p style="font-size:15px; color:#0f1419; white-space:pre-wrap;">${escapeHtml(event.description)}</p>
-                    
-                    <button class="btn-action" 
-                        style="margin-top:10px; background:#0f1419; color:white;" 
-                        onclick="window.openRsvpModal(${event.id}, '${safeTitle}')">
-                        RSVP
-                    </button>
+                    ${actionBtn}
                 </div>
             </div>`;
         });
     }
 
-    // Helper: Success Popup
-    function showSuccess(title, msg) {
-        const popup = document.getElementById('successPopup');
-        if(popup) {
-            popup.querySelector('h3').innerText = title;
-            popup.querySelector('p').innerText = msg;
-            popup.classList.add('show');
+// ==========================================
+    //  HELPER: Show New Success Modal
+    // ==========================================
+    function showSuccessModal(title, msg) {
+        const m = document.getElementById('successModal');
+        if(m) {
+            document.getElementById('successTitle').innerText = title;
+            document.getElementById('successMessage').innerText = msg;
+            m.style.display = 'block';
         } else {
-            alert(title + "\n" + msg);
+            alert(title + "\n" + msg); // Fallback if HTML missing
         }
     }
 

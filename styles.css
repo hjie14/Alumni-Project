@@ -1174,3 +1174,55 @@ button { cursor: pointer; border: none; outline: none; background: none; }
     border-radius: 10px;
     display: none; /* Hidden by default */
 }
+
+/* --- ACTION BUTTONS (Jobs & Events) --- */
+
+/* 1. Black Button (Apply / RSVP) */
+.btn-primary-action {
+    display: inline-block;
+    margin-top: 12px;
+    padding: 8px 20px;
+    background-color: #0f1419;
+    color: white;
+    font-size: 14px;
+    font-weight: 700;
+    border: 1px solid transparent;
+    border-radius: 9999px; /* Full rounded pill */
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-primary-action:hover {
+    background-color: #272c30; /* Lighter black */
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* 2. Red Button (Withdraw / Cancel) */
+.btn-destructive-action {
+    display: inline-block;
+    margin-top: 12px;
+    padding: 8px 20px;
+    background-color: white;
+    color: #f4212e; /* Alert Red */
+    font-size: 14px;
+    font-weight: 700;
+    border: 1px solid #fcfcfc; /* Subtle grey border initially */
+    outline: 1px solid #f4212e; /* Red outline */
+    border-radius: 9999px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+/* Hover Effect: Light Red Background + Shadow */
+.btn-destructive-action:hover {
+    background-color: #fef2f2; /* Very light red tint */
+    box-shadow: 0 2px 8px rgba(244, 33, 46, 0.15);
+    transform: translateY(-1px);
+}
+
+/* Optional: Active Press State */
+.btn-destructive-action:active {
+    transform: translateY(0);
+    background-color: #fee2e2;
+}
