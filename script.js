@@ -438,22 +438,34 @@ async function renderPosts(posts, container) {
         };
 
         // Cancel Modal Logic
+// Cancel Logic
         window.openCancelJobModal = (jobId) => {
             const m = document.getElementById('cancelJobModal');
             if(m) {
                 m.style.display = 'block';
                 document.getElementById('closeCancelJobModal').onclick = () => m.style.display = 'none';
+                
                 const btn = document.getElementById('confirmCancelJobBtn');
                 btn.onclick = null;
 
                 btn.onclick = async () => {
                     btn.innerText = "Withdrawing...";
-                    await supabase.from('job_applications').delete().match({ job_id: jobId, applicant_id: currentPublicUser.user_id });
+                    const { error } = await supabase.from('job_applications').delete().match({ job_id: jobId, applicant_id: currentPublicUser.user_id });
                     
+                    if(error) {
+                        alert("Error: " + error.message);
+                        btn.innerText = "Yes, Withdraw";
+                        return;
+                    }
+
                     m.style.display = 'none';
                     btn.innerText = "Yes, Withdraw";
                     showSuccessModal("Withdrawn", "Application removed.");
-                    fetchJobs(); // <--- REFRESH BUTTONS
+                    
+                    // FORCE REFRESH WITH DELAY (Fixes the button issue)
+                    setTimeout(() => {
+                        fetchJobs();
+                    }, 500); 
                 };
             }
         };
@@ -578,23 +590,34 @@ async function fetchJobs() {
             }
         };
 
-        // Cancel RSVP Logic
+// Cancel RSVP Logic
         window.openCancelRsvpModal = (eventId) => {
             const m = document.getElementById('cancelRsvpModal');
             if(m) {
                 m.style.display = 'block';
                 document.getElementById('closeCancelRsvpModal').onclick = () => m.style.display = 'none';
+                
                 const btn = document.getElementById('confirmCancelRsvpBtn');
                 btn.onclick = null;
 
                 btn.onclick = async () => {
                     btn.innerText = "Canceling...";
-                    await supabase.from('event_rsvps').delete().match({ event_id: eventId, attendee_id: currentPublicUser.user_id });
+                    const { error } = await supabase.from('event_rsvps').delete().match({ event_id: eventId, attendee_id: currentPublicUser.user_id });
                     
+                    if(error) {
+                        alert("Error: " + error.message);
+                        btn.innerText = "Yes, Cancel";
+                        return;
+                    }
+
                     m.style.display = 'none';
                     btn.innerText = "Yes, Cancel";
                     showSuccessModal("Cancelled", "Reservation removed.");
-                    fetchEvents(); // <--- REFRESH BUTTONS
+                    
+                    // FORCE REFRESH WITH DELAY
+                    setTimeout(() => {
+                        fetchEvents();
+                    }, 500); 
                 };
             }
         };
