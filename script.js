@@ -1167,35 +1167,25 @@ async function loadMentorTab(mode) {
             const otherUser = isSender ? req.receiver : req.sender; 
             const avatarHTML = getAvatarHTML(otherUser);
             
-            // --- NEW: BADGE LOGIC ---
-            let directionBadge = '';
-            if (mode === 'accepted') {
-                if (isSender) {
-                    // I sent this request
-                    directionBadge = `<span class="tag-sent">Sent by you</span>`;
-                } else {
-                    // I received this request
-                    directionBadge = `<span class="tag-received">Received</span>`;
-                }
-            }
-
+            let topRightContent = '';
             let actionArea = '';
 
-            if (mode === 'incoming') {
-                actionArea = `
-                    <div class="action-buttons">
-                        <button class="btn-action btn-accept" onclick="window.updateMentorStatus(${req.id}, 'Accepted', '${otherUser.user_id}')">Accept</button>
-                        <button class="btn-action btn-decline" onclick="window.updateMentorStatus(${req.id}, 'Declined', null)">Decline</button>
+            // --- 1. ACCEPTED TAB (Active) ---
+            if (mode === 'accepted') {
+                // Badge + DELETE BUTTON
+                let badge = isSender ? `<span class="tag-sent">Sent by you</span>` : `<span class="tag-received">Received</span>`;
+                
+                // Add Trash Icon next to the badge
+                topRightContent = `
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        ${badge}
+                        <div onclick="window.openEndMentorshipModal(${req.id})" 
+                             style="width:24px; height:24px; display:flex; align-items:center; justify-content:center; border-radius:50%; background:#fee2e2; cursor:pointer;" 
+                             title="End Mentorship">
+                            <i class='bx bx-trash' style="color:#ef4444; font-size:14px;"></i>
+                        </div>
                     </div>`;
-            } 
-            else if (mode === 'outgoing') {
-                let statusBadge = '';
-                if(req.status === 'Pending') statusBadge = `<span style="color:#d97706; font-weight:bold; background:#fef3c7; padding:4px 8px; border-radius:4px;">Pending</span>`;
-                else if(req.status === 'Declined') statusBadge = `<span style="color:#dc3545; font-weight:bold; background:#fee2e2; padding:4px 8px; border-radius:4px;">Declined</span>`;
-                else if(req.status === 'Accepted') statusBadge = `<button onclick="window.jumpToAccepted(${req.id})" style="background:#d1fae5; color:#059669; border:none; padding:6px 12px; border-radius:20px; font-weight:bold; cursor:pointer;">Accepted <i class='bx bx-right-arrow-alt'></i> View</button>`;
-                actionArea = `<div style="margin-top:10px;">${statusBadge}</div>`;
-            } 
-            else if (mode === 'accepted') {
+
                 const emailToShow = isSender ? req.receiver.email : req.sender.email;
                 actionArea = `
                     <div style="margin-top:10px; background:#f7f9f9; padding:10px; border-radius:8px; border:1px solid #eff3f4;">
@@ -1208,6 +1198,24 @@ async function loadMentorTab(mode) {
                         </div>
                     </div>
                 `;
+            } 
+// --- 2. INCOMING TAB ---
+            else if (mode === 'incoming') {
+                 actionArea = `
+                    <div class="action-buttons">
+                        <button class="btn-action btn-accept" onclick="window.openAcceptModal(${req.id}, '${otherUser.user_id}')">Accept</button>
+                        
+                        <button class="btn-action btn-decline" onclick="window.openDeclineModal(${req.id})">Decline</button>
+                    </div>`;
+            }
+            
+            // --- 3. OUTGOING TAB ---
+            else if (mode === 'outgoing') {
+                let statusBadge = '';
+                if(req.status === 'Pending') statusBadge = `<span style="color:#d97706; font-weight:bold; background:#fef3c7; padding:4px 8px; border-radius:4px;">Pending</span>`;
+                else if(req.status === 'Declined') statusBadge = `<span style="color:#dc3545; font-weight:bold; background:#fee2e2; padding:4px 8px; border-radius:4px;">Declined</span>`;
+                else if(req.status === 'Accepted') statusBadge = `<button onclick="window.jumpToAccepted(${req.id})" style="background:#d1fae5; color:#059669; border:none; padding:6px 12px; border-radius:20px; font-weight:bold; cursor:pointer;">Accepted <i class='bx bx-right-arrow-alt'></i> View</button>`;
+                actionArea = `<div style="margin-top:10px;">${statusBadge}</div>`;
             }
 
             container.innerHTML += `
@@ -1218,7 +1226,7 @@ async function loadMentorTab(mode) {
                             
                             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
                                 <div class="meta-info">@${escapeHtml(otherUser.user_name)}</div>
-                                ${directionBadge}
+                                ${topRightContent}
                             </div>
 
                             <h3 style="font-size:16px; margin-bottom:5px;">${escapeHtml(otherUser.name)}</h3>
@@ -1230,9 +1238,13 @@ async function loadMentorTab(mode) {
         });
     }
 
-    // AUTOMATED ACCEPT LOGIC
-    window.updateMentorStatus = async function(id, newStatus, senderId) {
-        if(!confirm(`Are you sure you want to ${newStatus}?`)) return;
+window.updateMentorStatus = async function(id, newStatus, senderId) {
+        
+        // Only ask for browser confirmation if it's NOT 'Accepted' (e.g. Declining)
+        // If it IS 'Accepted', our fancy modal already handled the "Are you sure?" part.
+        if (newStatus !== 'Accepted') {
+            if(!confirm(`Are you sure you want to ${newStatus}?`)) return;
+        }
         
         // If Accepting, automatically set BOTH emails to shared
         const updateData = { status: newStatus };
@@ -1246,7 +1258,8 @@ async function loadMentorTab(mode) {
         if (error) {
             alert("Error updating status.");
         } else {
-            document.getElementById(`card-${id}`).remove();
+            const card = document.getElementById(`card-${id}`);
+            if(card) card.remove();
             
             // Notification Logic
             if(newStatus === 'Accepted' && senderId) {
@@ -1262,7 +1275,7 @@ async function loadMentorTab(mode) {
             }
             
             updateAllMentorCounts();
-            loadMentorTab(currentMentorTab); // Refresh current view
+            loadMentorTab(currentMentorTab); 
         }
     };
 
@@ -1604,4 +1617,100 @@ function setupAuthForms() {
             console.warn("⚠️ No other users found. Create a second account to test!");
         }
     }
+
+    // ==========================================
+    //  FEATURE: END MENTORSHIP
+    // ==========================================
+    window.openEndMentorshipModal = (reqId) => {
+        const m = document.getElementById('endMentorshipModal');
+        if(m) {
+            m.style.display = 'block';
+            
+            const closeBtn = document.getElementById('closeEndMentorModal');
+            if(closeBtn) closeBtn.onclick = () => m.style.display = 'none';
+
+            const confirmBtn = document.getElementById('confirmEndMentorBtn');
+            if(confirmBtn) {
+                confirmBtn.onclick = null; // Clear old events
+                confirmBtn.onclick = async () => {
+                    confirmBtn.innerText = "Ending...";
+                    
+                    const { error } = await supabase.from('mentorship_requests').delete().eq('id', reqId);
+                    
+                    if(error) {
+                        alert("Error: " + error.message);
+                        confirmBtn.innerText = "End";
+                    } else {
+                        m.style.display = 'none';
+                        confirmBtn.innerText = "End";
+                        
+                        // Show generic success and reload tab
+                        alert("Mentorship ended."); 
+                        updateAllMentorCounts();
+                        loadMentorTab('accepted');
+                    }
+                };
+            }
+        }
+    };
+    
+    // Close modal on outside click
+    window.onclick = (e) => {
+        const m = document.getElementById('endMentorshipModal');
+        if(e.target == m) m.style.display = 'none';
+    };
+
+    // ==========================================
+    //  FEATURE: ACCEPT MENTORSHIP MODAL
+    // ==========================================
+    window.openAcceptModal = (reqId, senderId) => {
+        const m = document.getElementById('acceptMentorshipModal');
+        if(m) {
+            m.style.display = 'block';
+            
+            // Cancel Button
+            document.getElementById('closeAcceptModal').onclick = () => m.style.display = 'none';
+
+            // Confirm Button
+            const btn = document.getElementById('confirmAcceptBtn');
+            btn.onclick = null; // Clear old events
+            
+            btn.onclick = async () => {
+                btn.innerText = "Connecting...";
+                
+                // Call the existing update function, but now we know the user confirmed
+                await window.updateMentorStatus(reqId, 'Accepted', senderId);
+                
+                m.style.display = 'none';
+                btn.innerText = "Let's Start";
+            };
+        }
+    };
+
+    // ==========================================
+    //  FEATURE: DECLINE MENTORSHIP MODAL
+    // ==========================================
+    window.openDeclineModal = (reqId) => {
+        const m = document.getElementById('declineMentorshipModal');
+        if(m) {
+            m.style.display = 'block';
+            
+            // Cancel Button
+            document.getElementById('closeDeclineModal').onclick = () => m.style.display = 'none';
+
+            // Confirm Button
+            const btn = document.getElementById('confirmDeclineBtn');
+            btn.onclick = null; // Clear old events
+            
+            btn.onclick = async () => {
+                btn.innerText = "Declining...";
+                
+                // Call the existing update function (Status = 'Declined')
+                await window.updateMentorStatus(reqId, 'Declined', null);
+                
+                m.style.display = 'none';
+                btn.innerText = "Decline";
+            };
+        }
+    };
 });

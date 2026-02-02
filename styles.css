@@ -1434,3 +1434,168 @@ button { cursor: pointer; border: none; outline: none; background: none; }
     top: 24px;
     right: 20px;
 }
+
+/* =============================
+   MODERN POPUP MODAL DESIGN
+   ============================= */
+
+.modern-modal {
+    max-width: 360px;
+    border-radius: 24px;
+    padding: 40px 30px;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    border: 1px solid #fff;
+    background: white;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Red Icon Bubble */
+.modal-icon-bubble {
+    width: 64px;
+    height: 64px;
+    background-color: #fef2f2; /* Very light red */
+    color: #ef4444; /* Alert Red */
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px auto;
+    font-size: 32px;
+    box-shadow: 0 0 0 8px #fffaf9; /* Double ring effect */
+}
+
+.modal-title {
+    font-size: 22px;
+    font-weight: 800;
+    margin: 0 0 10px 0;
+    color: #0f1419;
+    letter-spacing: -0.5px;
+}
+
+.modal-desc {
+    font-size: 15px;
+    color: #536471;
+    margin: 0 0 30px 0;
+    line-height: 1.5;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 12px;
+    width: 100%;
+}
+
+/* Cancel Button (Grey Ghost) */
+.btn-cancel {
+    flex: 1;
+    padding: 14px 0;
+    border-radius: 12px;
+    border: 1px solid #eff3f4;
+    background: white;
+    color: #536471;
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-cancel:hover {
+    background-color: #f7f9f9;
+    color: #0f1419;
+    border-color: #cfd9de;
+}
+
+/* Confirm Button (Danger Red) */
+.btn-confirm-danger {
+    flex: 1;
+    padding: 14px 0;
+    border-radius: 12px;
+    border: none;
+    background-color: #f4212e;
+    color: white;
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(244, 33, 46, 0.25);
+    transition: all 0.2s;
+}
+
+.btn-confirm-danger:hover {
+    background-color: #d91e28;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(244, 33, 46, 0.35);
+}
+
+.btn-confirm-danger:active {
+    transform: translateY(0);
+}
+
+/* --- SUCCESS MODAL VARIANTS --- */
+
+/* Green Icon Bubble */
+.modal-icon-bubble.success {
+    background-color: #dcfce7; /* Light Green */
+    color: #16a34a; /* Success Green */
+    box-shadow: 0 0 0 8px #f0fdf4; /* Double ring effect */
+}
+
+/* Green Confirm Button */
+.btn-confirm-success {
+    flex: 1;
+    padding: 14px 0;
+    border-radius: 12px;
+    border: none;
+    background-color: #16a34a; /* Green */
+    color: white;
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(22, 163, 74, 0.25);
+    transition: all 0.2s;
+}
+
+.btn-confirm-success:hover {
+    background-color: #15803d; /* Darker Green */
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(22, 163, 74, 0.35);
+}
+
+.btn-confirm-success:active {
+    transform: translateY(0);
+}
+
+/* --- DECLINE MODAL VARIANTS --- */
+
+/* Orange Icon Bubble */
+.modal-icon-bubble.decline {
+    background-color: #ffedd5; /* Light Orange */
+    color: #f97316; /* Orange */
+    box-shadow: 0 0 0 8px #fff7ed; /* Double ring effect */
+}
+
+/* Orange Confirm Button */
+.btn-confirm-decline {
+    flex: 1;
+    padding: 14px 0;
+    border-radius: 12px;
+    border: none;
+    background-color: #f97316; /* Orange */
+    color: white;
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.25);
+    transition: all 0.2s;
+}
+
+.btn-confirm-decline:hover {
+    background-color: #ea580c; /* Darker Orange */
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(249, 115, 22, 0.35);
+}
+
+.btn-confirm-decline:active {
+    transform: translateY(0);
+}

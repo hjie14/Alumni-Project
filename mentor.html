@@ -96,6 +96,78 @@
 
 </div>
 
+<div id="endMentorshipModal" class="modal" style="backdrop-filter: blur(4px); background-color: rgba(0,0,0,0.4);">
+    <div class="modal-content modern-modal">
+        
+        <div class="modal-icon-bubble">
+            <i class='bx bx-unlink'></i>
+        </div>
+
+        <h2 class="modal-title">End Mentorship?</h2>
+        
+        <p class="modal-desc">
+            Are you sure you want to disconnect? This will remove this user from your active list and you won't be able to message them.
+        </p>
+
+        <div class="modal-actions">
+            <button id="closeEndMentorModal" class="btn-cancel">
+                Cancel
+            </button>
+            <button id="confirmEndMentorBtn" class="btn-confirm-danger">
+                Yes, End It
+            </button>
+        </div>
+    </div>
+</div>
+
+<div id="acceptMentorshipModal" class="modal" style="backdrop-filter: blur(4px); background-color: rgba(0,0,0,0.4);">
+    <div class="modal-content modern-modal">
+        
+        <div class="modal-icon-bubble success">
+            <i class='bx bx-check'></i>
+        </div>
+
+        <h2 class="modal-title">Accept Request?</h2>
+        
+        <p class="modal-desc">
+            This will start a new mentorship journey. By accepting, you agree to share your email address with this user.
+        </p>
+
+        <div class="modal-actions">
+            <button id="closeAcceptModal" class="btn-cancel">
+                Cancel
+            </button>
+            <button id="confirmAcceptBtn" class="btn-confirm-success">
+                Let's Start
+            </button>
+        </div>
+    </div>
+</div>
+
+<div id="declineMentorshipModal" class="modal" style="backdrop-filter: blur(4px); background-color: rgba(0,0,0,0.4);">
+    <div class="modal-content modern-modal">
+        
+        <div class="modal-icon-bubble decline">
+            <i class='bx bx-x'></i>
+        </div>
+
+        <h2 class="modal-title">Decline Request?</h2>
+        
+        <p class="modal-desc">
+            This will remove the request from your list. The user will see that the request was declined.
+        </p>
+
+        <div class="modal-actions">
+            <button id="closeDeclineModal" class="btn-cancel">
+                Cancel
+            </button>
+            <button id="confirmDeclineBtn" class="btn-confirm-decline">
+                Decline
+            </button>
+        </div>
+    </div>
+</div>
+
 <script type="module" src="script.js"></script>
 </body>
 </html>
