@@ -1,68 +1,114 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Event Post</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="styles.css">
-  <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <meta charset="UTF-8">
+    <title>Events | AlumniConnect</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="styles.css">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
 </head>
-<body class="auth-body">
-    <div class="auth-card">
+<body>
 
-        <div class="auth-header">
-            <h1>Event Posting</h1>
-        </div>
-
-            <nav>
-                <a href="home.html" class="nav-link active">
-                    <i class='bx bxs-home-circle'></i> <span>Home</span>
-                </a>
-                <a href="connect.html" class="nav-link">
-                    <i class='bx bx-search'></i> <span>Connect</span>
-                </a>
-                <a href="mentor.html" class="nav-link">
-                    <i class='bx bx-group'></i> <span>Mentorship</span>
-                </a>
-                <a href="bookmarks.html" class="nav-link">
-                    <i class='bx bx-bookmark'></i> <span>Bookmarks</span>
-                </a>
-                <a href="notifications.html" class="nav-link">
-                    <i class='bx bx-bell'></i> <span>Notifications</span>
-                </a>
-                <a href="profile.html" class="nav-link">
-                    <i class='bx bx-user'></i> <span>Profile</span>
-                </a>
+<div class="layout">
+    <header class="sidebar">
+        <div>
+            <div class="nav-link" style="width: 50px; height: 50px; justify-content: center;">
+                 <i class='bx bxs-network-chart' style="font-size: 30px;"></i>
+            </div>
+          <nav>
+                <a href="home.html" class="nav-link"><i class='bx bxs-home-circle'></i> <span>Home</span></a>
+                <a href="connect.html" class="nav-link"><i class='bx bx-search'></i> <span>Connect</span></a>
+                <a href="mentor.html" class="nav-link"><i class='bx bx-group'></i> <span>Mentorship</span></a>
+                <a href="notifications.html" class="nav-link"><i class='bx bx-bell'></i> <span>Notifications</span></a>
+                <a href="jobpost.html" class="nav-link active"><i class='bx bx-briefcase'></i> <span>Jobs</span></a>
+                <a href="events.html" class="nav-link"><i class='bx bx-calendar-event'></i> <span>Events</span></a>
+                <a href="bookmarks.html" class="nav-link"><i class='bx bx-bookmark'></i> <span>Bookmarks</span></a>
+                <a href="profile.html" class="nav-link"><i class='bx bx-user'></i> <span>Profile</span></a>
                 <a href="feedback.html" class="nav-link">
-                    <i class='bx bx-message-dots'></i> <span>Feedback</span>
-                </a>
-                <a href="jobpost.html" class="nav-link">
-                    <i class='bx bx-briefcase'></i> <span>Job Posting</span>
-                </a>
-                <a href="events.html" class="nav-link">
-                    <i class='bx bx-calendar-event'></i> <span>Event Posting</span>
+                <i class='bx bx-message-dots'></i> <span>Feedback</span>
                 </a>
             </nav>
+            <button id="sidebarPostBtn" class="sidebar-post-btn">Create Event</button>
+        </div>
+        <div id="sidebarUser" class="user-pill">
+            <div class="user-avatar-sm">?</div>
+            <div class="user-meta">
+                <span class="post-name">Loading...</span>
+                <span class="user-handle" style="font-size: 13px;">@...</span>
+            </div>
+        </div>
+    </header>
 
-        <hr>
+    <main class="main-feed">
+        <div class="feed-header">
+            <span class="feed-title">Upcoming Events</span>
+        </div>
 
-        <h3>Add New Event</h3>
+        <div id="eventsContainer">
+            <div style="text-align:center; padding:40px; color:#536471;">
+                <i class='bx bx-loader-alt bx-spin' style="font-size: 24px;"></i><br>Loading events...
+            </div>
+        </div>
+    </main>
 
-        <label>Event Title:</label><br>
-        <input type="text" id="eventTitle"><br><br>
+    <aside class="right-sidebar">
+        <div class="search-box">
+            <i class='bx bx-search'></i>
+            <input type="text" placeholder="Search Events">
+        </div>
+    </aside>
+</div>
 
-        <label>Event Location:</label><br>
-        <input type="text" id="eventLocation"><br><br>
+<div id="eventPostModal" class="modal">
+    <div class="modal-content" style="max-width: 600px; border-radius: 16px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h2 style="font-size:20px; margin:0;">Create Event</h2>
+            <span class="close-modal" id="closeEventModal">&times;</span>
+        </div>
+        
+        <div class="form-group">
+            <label>Event Name</label>
+            <input type="text" id="inputEventTitle" class="modal-input" placeholder="e.g. Alumni Networking Night">
+        </div>
 
-        <label>Description:</label><br>
-        <textarea id="eventDesc"></textarea><br><br>
+        <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+            <div>
+                <label>Date</label>
+                <input type="date" id="inputEventDate" class="modal-input">
+            </div>
+            <div>
+                <label>Time</label>
+                <input type="time" id="inputEventTime" class="modal-input">
+            </div>
+        </div>
 
-        <button id="sidebarPostBtn" class="sidebar-post-btn" onclick="addEvent()">Submit Event</button>
+        <div class="form-group">
+            <label>Location / Link</label>
+            <input type="text" id="inputEventLocation" class="modal-input" placeholder="e.g. Zoom Link or 'Hall A'">
+        </div>
 
-        <hr>
+        <div class="form-group">
+            <label>Details</label>
+            <textarea id="inputEventDesc" rows="4" class="modal-input" placeholder="What is this event about?" style="resize:none;"></textarea>
+        </div>
+
+        <div style="text-align: right; margin-top: 20px;">
+            <button id="submitEventBtn" class="save-profile-btn">Publish Event</button>
+        </div>
     </div>
+</div>
 
-        <script type="module" src="script.js"></script>
+<div id="successPopup" class="custom-popup">
+    <div class="popup-content">
+        <div class="popup-icon" style="background:#d1fae5; color:#059669;">
+            <i class='bx bx-check'></i>
+        </div>
+        <h3 id="successTitle">Success!</h3>
+        <p id="successMessage">Event created successfully.</p>
+        <button onclick="document.getElementById('successPopup').classList.remove('show')">Awesome</button>
+    </div>
+</div>
 
+<script type="module" src="script.js"></script>
 </body>
 </html>

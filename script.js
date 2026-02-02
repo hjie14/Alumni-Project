@@ -36,7 +36,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     else if (path.includes('mentor.html')) initMentorDashboard();
     else if (path.includes('bookmarks.html')) setupBookmarksPage();
     else if (path.includes('jobpost.html')) initJobPostPage();
-    else if (path.includes('event.html')) initEventPostPage();
+    else if (path.includes('events.html')) initEventPostPage();
 
 // ==========================================
     //  FEATURE: PROFILE PAGE (With Custom Cancel Popup)
@@ -772,27 +772,209 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    function initJobPostPage() {
+// ==========================================
+    //  FEATURE: JOBS (Fixed with Popup)
+    // ==========================================
+    async function initJobPostPage() {
         if (!currentPublicUser) { window.location.href = 'index.html'; return; }
-        const btn = document.getElementById('sidebarPostBtn');
-        if (btn) btn.addEventListener('click', async () => {
-                const title = document.getElementById('jobTitle').value; const company = document.getElementById('jobCompany').value; const desc = document.getElementById('jobDesc').value;
-                if(!title || !company) { alert("Please fill in required fields."); return; }
-                btn.innerText = "Posting..."; btn.disabled = true;
-                const { error } = await supabase.from('jobs').insert([{ title: title, company: company, description: desc, posted_by: currentPublicUser.user_id }]);
-                if (error) { alert("Error: " + error.message); btn.innerText = "Submit Job"; btn.disabled = false; } else { alert("Job Posted Successfully!"); window.location.href = 'home.html'; }
+        
+        // Modal Logic
+        const modal = document.getElementById('jobPostModal');
+        const openBtn = document.getElementById('sidebarPostBtn');
+        const closeBtn = document.getElementById('closeJobModal');
+        const submitBtn = document.getElementById('submitJobBtn');
+
+        // Open/Close
+        openBtn.onclick = () => modal.style.display = 'block';
+        closeBtn.onclick = () => modal.style.display = 'none';
+        window.onclick = (e) => { if(e.target == modal) modal.style.display = 'none'; };
+
+        // Submit Logic
+        submitBtn.onclick = async () => {
+            const title = document.getElementById('inputJobTitle').value; 
+            const company = document.getElementById('inputJobCompany').value; 
+            const location = document.getElementById('inputJobLocation').value; 
+            const type = document.getElementById('inputJobType').value; 
+            const desc = document.getElementById('inputJobDesc').value;
+            
+            if(!title || !company) { alert("Please fill in Job Title and Company."); return; }
+            
+            submitBtn.innerText = "Posting..."; submitBtn.disabled = true;
+            
+            // Combine extra fields into description for now, or save them if you added columns
+            const fullDesc = `${type} | ${location}\n\n${desc}`;
+
+            const { error } = await supabase.from('jobs').insert([{ 
+                title: title, 
+                company: company, 
+                description: fullDesc, 
+                posted_by: currentPublicUser.user_id 
+            }]);
+            
+            if (error) { 
+                alert("Error: " + error.message); 
+            } else { 
+                modal.style.display = 'none';
+                
+                // Show Success Popup
+                const successPopup = document.getElementById('successPopup');
+                if(successPopup) {
+                    successPopup.querySelector('h3').innerText = "Job Posted!";
+                    successPopup.querySelector('p').innerText = "Your job listing is now live.";
+                    successPopup.classList.add('show');
+                }
+                
+                // Clear & Refresh
+                document.getElementById('inputJobTitle').value = '';
+                document.getElementById('inputJobCompany').value = '';
+                document.getElementById('inputJobDesc').value = '';
+                fetchJobs(); 
+            }
+            submitBtn.innerText = "Post Opportunity"; submitBtn.disabled = false;
+        };
+
+        fetchJobs();
+    }
+
+    async function fetchJobs() {
+        const container = document.getElementById('jobsContainer');
+        if(!container) return;
+        
+        const { data: jobs, error } = await supabase.from('jobs').select('*, User:posted_by(name)').order('created_at', { ascending: false });
+        
+        if(error) { container.innerHTML = 'Error loading jobs.'; return; }
+        
+        container.innerHTML = '';
+        if(!jobs || jobs.length === 0) { container.innerHTML = '<div class="no-posts-message">No jobs posted yet.</div>'; return; }
+
+        jobs.forEach(job => {
+            const date = new Date(job.created_at).toLocaleDateString();
+            const posterName = job.User?.name || "Unknown";
+            
+            container.innerHTML += `
+            <div class="post" style="cursor: default;">
+                <div style="width: 50px; height: 50px; background:#f7f9f9; border-radius:8px; display:flex; align-items:center; justify-content:center; margin-right:15px; font-size:24px;">
+                    💼
+                </div>
+                <div style="flex:1;">
+                    <div style="font-size:13px; color:#536471; margin-bottom:5px;">Posted by ${escapeHtml(posterName)} · ${date}</div>
+                    <h3 style="margin:0; font-size:18px;">${escapeHtml(job.title)}</h3>
+                    <div style="font-weight:bold; color:#1d9bf0; margin-bottom:8px;">${escapeHtml(job.company)}</div>
+                    <p style="font-size:15px; color:#0f1419; white-space:pre-wrap;">${escapeHtml(job.description)}</p>
+                    <button class="btn-action" style="margin-top:10px; border:1px solid #cfd9de; background:white;">Apply Now</button>
+                </div>
+            </div>`;
         });
     }
 
-    function initEventPostPage() {
+// ==========================================
+    //  FEATURE: EVENTS
+    // ==========================================
+    async function initEventPostPage() {
         if (!currentPublicUser) { window.location.href = 'index.html'; return; }
-        const btn = document.getElementById('sidebarPostBtn');
-        if (btn) btn.addEventListener('click', async () => {
-                const title = document.getElementById('eventTitle').value; const location = document.getElementById('eventLocation').value; const desc = document.getElementById('eventDesc').value;
-                if(!title || !location) { alert("Please fill in required fields."); return; }
-                btn.innerText = "Posting..."; btn.disabled = true;
-                const { error } = await supabase.from('events').insert([{ title: title, location: location, description: desc, posted_by: currentPublicUser.user_id }]);
-                if (error) { alert("Error: " + error.message); btn.innerText = "Submit Event"; btn.disabled = false; } else { alert("Event Created Successfully!"); window.location.href = 'home.html'; }
+        
+        console.log("📅 Initializing Event Page...");
+
+        // 1. Get Elements
+        const modal = document.getElementById('eventPostModal');
+        const openBtn = document.getElementById('sidebarPostBtn');
+        const closeBtn = document.getElementById('closeEventModal');
+        const submitBtn = document.getElementById('submitEventBtn');
+
+        // 2. Safety Check (Debug if missing)
+        if (!modal) console.error("❌ Error: Missing 'eventPostModal' in HTML");
+        if (!openBtn) console.error("❌ Error: Missing 'sidebarPostBtn' in HTML");
+        if (!closeBtn) console.error("❌ Error: Missing 'closeEventModal' in HTML");
+        if (!submitBtn) console.error("❌ Error: Missing 'submitEventBtn' in HTML");
+
+        if (modal && openBtn && closeBtn && submitBtn) {
+            // Open/Close Logic
+            openBtn.onclick = () => modal.style.display = 'block';
+            closeBtn.onclick = () => modal.style.display = 'none';
+            window.onclick = (e) => { if(e.target == modal) modal.style.display = 'none'; };
+
+            // Submit Logic
+            submitBtn.onclick = async () => {
+                const title = document.getElementById('inputEventTitle').value; 
+                const date = document.getElementById('inputEventDate').value; 
+                const time = document.getElementById('inputEventTime').value; 
+                const location = document.getElementById('inputEventLocation').value; 
+                const desc = document.getElementById('inputEventDesc').value;
+                
+                if(!title || !date || !location) { alert("Please fill in Title, Date, and Location."); return; }
+                
+                submitBtn.innerText = "Publishing..."; submitBtn.disabled = true;
+                
+                const fullDesc = `📅 ${date} at ${time}\n📍 ${location}\n\n${desc}`;
+
+                const { error } = await supabase.from('events').insert([{ 
+                    title: title, 
+                    location: location, 
+                    description: fullDesc, 
+                    posted_by: currentPublicUser.user_id 
+                }]);
+                
+                if (error) { 
+                    alert("Error: " + error.message); 
+                } else { 
+                    modal.style.display = 'none';
+                    // Show Success
+                    const successPopup = document.getElementById('successPopup');
+                    if(successPopup) {
+                        successPopup.querySelector('h3').innerText = "Event Created!";
+                        successPopup.querySelector('p').innerText = "It is now visible to everyone.";
+                        successPopup.classList.add('show');
+                    }
+                    // Clear inputs
+                    document.getElementById('inputEventTitle').value = '';
+                    document.getElementById('inputEventLocation').value = '';
+                    document.getElementById('inputEventDesc').value = '';
+                    fetchEvents();
+                }
+                submitBtn.innerText = "Publish Event"; submitBtn.disabled = false;
+            };
+        }
+
+        // 3. Load Events
+        fetchEvents();
+    }
+
+    async function fetchEvents() {
+        const container = document.getElementById('eventsContainer');
+        if(!container) return;
+        
+        container.innerHTML = `<div style="text-align:center; padding:40px; color:#536471;"><i class='bx bx-loader-alt bx-spin' style="font-size: 24px;"></i><br>Loading events...</div>`;
+        
+        const { data: events, error } = await supabase.from('events').select('*, User:posted_by(name)').order('created_at', { ascending: false });
+        
+        if(error) { 
+            console.error("Fetch Error:", error);
+            container.innerHTML = '<div style="padding:20px; text-align:center; color:red;">Error loading events. Check Console.</div>'; 
+            return; 
+        }
+        
+        container.innerHTML = '';
+        if(!events || events.length === 0) { container.innerHTML = '<div class="no-posts-message">No upcoming events.</div>'; return; }
+
+        events.forEach(event => {
+            const date = new Date(event.created_at).toLocaleDateString();
+            const hostName = event.User?.name || "Unknown";
+            
+            container.innerHTML += `
+            <div class="post" style="cursor: default;">
+                <div style="width: 50px; height: 50px; background:#e8f5fd; color:#1d9bf0; border-radius:12px; display:flex; flex-direction:column; align-items:center; justify-content:center; margin-right:15px; font-weight:bold;">
+                    <i class='bx bx-calendar'></i>
+                </div>
+                <div style="flex:1;">
+                    <div style="font-size:13px; color:#536471; margin-bottom:5px;">Hosted by ${escapeHtml(hostName)}</div>
+                    <h3 style="margin:0; font-size:18px;">${escapeHtml(event.title)}</h3>
+                    <div style="color:#536471; font-size:14px; margin-bottom:8px;">
+                        <i class='bx bx-map'></i> ${escapeHtml(event.location)}
+                    </div>
+                    <p style="font-size:15px; color:#0f1419; white-space:pre-wrap;">${escapeHtml(event.description)}</p>
+                    <button class="btn-action" style="margin-top:10px; background:#0f1419; color:white;">RSVP</button>
+                </div>
+            </div>`;
         });
     }
 
